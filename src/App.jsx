@@ -14,6 +14,7 @@ import { ScratchpadModal } from './components/ScratchpadModal';
 import { StreakCelebrationModal } from './components/StreakCelebrationModal';
 import { TaskAlarmModal } from './components/TaskAlarmModal';
 import { PunishmentModal } from './components/PunishmentModal';
+import { OpeningSplash } from './components/OpeningSplash';
 
 const AppContent = () => {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -42,17 +43,20 @@ const AppContent = () => {
 
   return (
     <div className="app-container">
+      {/* Website Opening Startup Splash Screen */}
+      <OpeningSplash />
+
       {/* Ambient Mesh Glow Orbs */}
       <div className="app-bg-glow">
         <div className="glow-orb-1" />
         <div className="glow-orb-2" />
       </div>
 
-      {/* Sidebar */}
+      {/* Sidebar Navigation */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Main Content Area */}
-      <main className="main-content">
+      <main className="main-content staggered-entrance">
         <Header activeTab={activeTab} />
 
         {activeTab === 'tasks' && <TaskList />}
@@ -60,7 +64,7 @@ const AppContent = () => {
         {activeTab === 'stats' && <StatsDashboard />}
       </main>
 
-      {/* Overlays */}
+      {/* Overlays & Modals */}
       <TaskModal />
       <FocusMode />
       <GuideMeSidebar />
