@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTask } from '../context/TaskContext';
-import { X, Plus, Trash2, Tag, Star, Calendar, Clock, Sparkles, Wand2, ExternalLink, Link2 } from 'lucide-react';
+import { X, Plus, Trash2, Tag, Star, Calendar, Clock, Sparkles, Wand2, Link2, CheckSquare } from 'lucide-react';
 
 export const TaskModal = () => {
   const {
@@ -103,7 +103,7 @@ export const TaskModal = () => {
   };
 
   const handleAddSubtask = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!subtaskInput.trim()) return;
     setSubtasks([...subtasks, { id: `sub-${Date.now()}`, title: subtaskInput.trim(), completed: false }]);
     setSubtaskInput('');
@@ -139,18 +139,22 @@ export const TaskModal = () => {
 
   return (
     <div className="modal-overlay" onClick={() => setActiveModalTask(null)}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-content glass-panel modal-luxury-card" onClick={(e) => e.stopPropagation()}>
+        {/* Modal Header */}
         <div className="modal-header">
-          <h2>{isEditing ? 'Edit Task' : 'Create New Task'}</h2>
+          <div className="modal-title-wrap">
+            <Sparkles size={20} color="#6366f1" />
+            <h2>{isEditing ? 'Edit Task' : 'Create New Task'}</h2>
+          </div>
           <button className="btn-icon" onClick={() => setActiveModalTask(null)}>
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          {/* Title */}
+          {/* Task Title */}
           <div className="form-group">
-            <label>Task Title *</label>
+            <label className="form-label">Task Title *</label>
             <input
               type="text"
               className="form-input title-input"
@@ -164,9 +168,9 @@ export const TaskModal = () => {
 
           {/* Direct Resource Link Input */}
           <div className="form-group">
-            <label className="link-input-label">
-              <Link2 size={14} color="#06b6d4" />
-              Direct Resource Link / URL (Optional)
+            <label className="form-label link-input-label">
+              <Link2 size={15} color="#06b6d4" />
+              <span>Direct Resource Link / URL (Optional)</span>
             </label>
             <input
               type="url"
@@ -179,7 +183,7 @@ export const TaskModal = () => {
 
           {/* Description */}
           <div className="form-group">
-            <label>Description & Notes</label>
+            <label className="form-label">Description & Notes</label>
             <textarea
               className="form-textarea"
               rows={3}
@@ -192,7 +196,7 @@ export const TaskModal = () => {
           {/* Category & Priority Grid */}
           <div className="form-row-2">
             <div className="form-group">
-              <label>Category</label>
+              <label className="form-label">Category</label>
               <select
                 className="form-select"
                 value={category}
@@ -205,7 +209,7 @@ export const TaskModal = () => {
             </div>
 
             <div className="form-group">
-              <label>Priority</label>
+              <label className="form-label">Priority</label>
               <select
                 className="form-select"
                 value={priority}
@@ -222,7 +226,7 @@ export const TaskModal = () => {
           {/* Due Date & Est Duration */}
           <div className="form-row-2">
             <div className="form-group">
-              <label><Calendar size={14} /> Due Date</label>
+              <label className="form-label"><Calendar size={14} /> Due Date</label>
               <input
                 type="date"
                 className="form-input"
@@ -232,7 +236,7 @@ export const TaskModal = () => {
             </div>
 
             <div className="form-group">
-              <label><Clock size={14} /> Est. Duration (Minutes)</label>
+              <label className="form-label"><Clock size={14} /> Est. Duration (Minutes)</label>
               <input
                 type="number"
                 className="form-input"
@@ -248,7 +252,7 @@ export const TaskModal = () => {
           {/* Subtasks Builder */}
           <div className="form-group">
             <div className="subtask-label-row">
-              <label>Subtasks Checklist ({subtasks.length})</label>
+              <label className="form-label"><CheckSquare size={14} /> Subtasks Checklist ({subtasks.length})</label>
               <button
                 type="button"
                 className="btn-decompose"
@@ -259,16 +263,18 @@ export const TaskModal = () => {
               </button>
             </div>
 
-            <div className="subtask-builder-list">
-              {subtasks.map((sub, i) => (
-                <div key={sub.id} className="subtask-builder-item">
-                  <span>{i + 1}. {sub.title}</span>
-                  <button type="button" className="btn-icon text-danger" onClick={() => removeSubtask(sub.id)}>
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {subtasks.length > 0 && (
+              <div className="subtask-builder-list">
+                {subtasks.map((sub, i) => (
+                  <div key={sub.id} className="subtask-builder-item">
+                    <span>{i + 1}. {sub.title}</span>
+                    <button type="button" className="btn-icon text-danger" onClick={() => removeSubtask(sub.id)}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="subtask-input-row">
               <input
@@ -279,20 +285,20 @@ export const TaskModal = () => {
                 onChange={(e) => setSubtaskInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubtask(e); }}
               />
-              <button type="button" className="btn btn-secondary" onClick={handleAddSubtask}>
-                <Plus size={16} /> Add
+              <button type="button" className="btn btn-secondary btn-sm" onClick={handleAddSubtask}>
+                <Plus size={15} /> Add
               </button>
             </div>
           </div>
 
           {/* Tags */}
           <div className="form-group">
-            <label><Tag size={14} /> Tags</label>
+            <label className="form-label"><Tag size={14} /> Tags</label>
             <div className="tags-input-box">
               {tags.map((t, idx) => (
                 <span key={idx} className="tag-pill">
                   #{t}
-                  <button type="button" onClick={() => removeTag(t)}>&times;</button>
+                  <button type="button" className="tag-remove-btn" onClick={() => removeTag(t)}>&times;</button>
                 </span>
               ))}
               <input
