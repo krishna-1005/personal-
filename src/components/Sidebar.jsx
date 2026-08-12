@@ -26,6 +26,7 @@ import {
   Headphones,
   FileText,
   Layers,
+  CalendarDays,
   X
 } from 'lucide-react';
 
@@ -135,6 +136,14 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
               <Inbox size={18} />
               <span>All Tasks</span>
               {inboxCount > 0 && <span className="nav-count">{inboxCount}</span>}
+            </button>
+
+            <button
+              className={`nav-item ${activeTab === 'tasks' && activeView === 'day-schedule' ? 'active' : ''}`}
+              onClick={() => handleNavClick('tasks', 'day-schedule')}
+            >
+              <CalendarDays size={18} color="#06b6d4" />
+              <span>Day-Wise Schedule</span>
             </button>
 
             <button

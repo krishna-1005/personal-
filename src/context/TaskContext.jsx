@@ -14,7 +14,7 @@ const DEFAULT_PUNISHMENTS = [
     id: 'p-2',
     title: '📵 1-Hour Social Media & Distraction Detox',
     description: 'Close Instagram, YouTube, and X for the next 60 minutes. Deep work only.',
-    icon: 'SmartphoneOff'
+    icon: 'PhoneOff'
   },
   {
     id: 'p-3',
@@ -128,7 +128,6 @@ export const TaskProvider = ({ children }) => {
     return { count: 0, lastCompletedDate: null, celebratedToday: false };
   });
 
-  // Punishment & Discipline Engine
   const [activePunishment, setActivePunishment] = useState(null);
   const [punishmentTargetTask, setPunishmentTargetTask] = useState(null);
   const [punishmentLog, setPunishmentLog] = useState(() => {
@@ -139,10 +138,7 @@ export const TaskProvider = ({ children }) => {
     return [];
   });
 
-  // Mobile Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Live Timer Countdown Engine
   const [runningTaskId, setRunningTaskId] = useState(null);
   const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
   const [isTimerPaused, setIsTimerPaused] = useState(false);
@@ -171,7 +167,6 @@ export const TaskProvider = ({ children }) => {
     return { totalFocusMinutes: 0, completedSessions: 0 };
   });
 
-  // Modals Overlays
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [activeModalTask, setActiveModalTask] = useState(null);
   const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
@@ -182,7 +177,7 @@ export const TaskProvider = ({ children }) => {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [celebratedStreakNum, setCelebratedStreakNum] = useState(0);
 
-  // Local Storage Save
+  // Sync state changes to LocalStorage immediately
   useEffect(() => { localStorage.setItem('taskpulse_tasks', JSON.stringify(tasks)); }, [tasks]);
   useEffect(() => { localStorage.setItem('taskpulse_categories', JSON.stringify(categories)); }, [categories]);
   useEffect(() => { localStorage.setItem('taskpulse_habits', JSON.stringify(habits)); }, [habits]);
@@ -195,16 +190,31 @@ export const TaskProvider = ({ children }) => {
   }, [theme]);
   useEffect(() => { localStorage.setItem('taskpulse_focus_stats', JSON.stringify(focusStats)); }, [focusStats]);
 
-  // Check Overdue Tasks & Assign Punishment
+  // Window Cross-Tab Storage Event Listener (Instant multi-tab sync when reopened or modified)
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'taskpulse_tasks' && e.newValue) {
+        try { setTasks(JSON.parse(e.newValue)); } catch (err) {}
+      } else if (e.key === 'taskpulse_habits' && e.newValue) {
+        try { setHabits(JSON.parse(e.newValue)); } catch (err) {}
+      } else if (e.key === 'taskpulse_streak_engine' && e.newValue) {
+        try { setStreakData(JSON.parse(e.newValue)); } catch (err) {}
+      } else if (e.key === 'taskpulse_scratchpad' && e.newValue) {
+        setScratchpad(e.newValue);
+      } else if (e.key === 'taskpulse_focus_stats' && e.newValue) {
+        try { setFocusStats(JSON.parse(e.newValue)); } catch (err) {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const triggerPunishmentForMissedTask = (missedTask) => {
-    // Pick random punishment challenge
     const randomIndex = Math.floor(Math.random() * DEFAULT_PUNISHMENTS.length);
     const chosenPunishment = DEFAULT_PUNISHMENTS[randomIndex];
-
     setActivePunishment(chosenPunishment);
     setPunishmentTargetTask(missedTask);
-
-    // Reset Streak as penalty
     setStreakData(prev => ({ ...prev, count: 0 }));
   };
 
@@ -224,7 +234,6 @@ export const TaskProvider = ({ children }) => {
     setPunishmentTargetTask(null);
   };
 
-  // Live Timer Countdown Interval
   useEffect(() => {
     let timer = null;
     if (runningTaskId && !isTimerPaused && activeTimerSeconds > 0) {

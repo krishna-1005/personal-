@@ -1,7 +1,27 @@
 import React, { useState } from 'react';
 import { useTask } from '../context/TaskContext';
 import { TaskItem } from './TaskItem';
-import { CheckCircle2, Plus, Sparkles, Filter, Inbox, Calendar, Clock, Star, Folder, Briefcase, User, Code, Activity, DollarSign } from 'lucide-react';
+import {
+  CheckCircle2,
+  Plus,
+  Sparkles,
+  Filter,
+  Inbox,
+  Calendar,
+  Clock,
+  Star,
+  Folder,
+  Briefcase,
+  User,
+  Code,
+  Activity,
+  DollarSign,
+  LayoutGrid,
+  ListFilter,
+  CalendarDays,
+  AlertCircle,
+  Sun
+} from 'lucide-react';
 
 const ICON_MAP = {
   Briefcase: Briefcase,
@@ -23,8 +43,11 @@ export const TaskList = () => {
   } = useTask();
 
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('day-split'); // 'list' or 'day-split'
 
   const todayStr = new Date().toISOString().split('T')[0];
+  const tomorrowDate = new Date(Date.now() + 86400000);
+  const tomorrowStr = tomorrowDate.toISOString().split('T')[0];
 
   // 1. Filter by Active View Navigation
   let filtered = tasks.filter(task => {
@@ -39,6 +62,8 @@ export const TaskList = () => {
         return task.starred;
       case 'completed':
         return task.completed;
+      case 'day-schedule':
+        return !task.completed;
       default:
         return task.category === activeView && !task.completed;
     }
@@ -77,13 +102,48 @@ export const TaskList = () => {
     return 0;
   });
 
-  // Category Icon helper
+  // Group Tasks Day-Wise
+  const groupTasksByDay = (taskList) => {
+    const groups = {
+      overdue: [],
+      today: [],
+      tomorrow: [],
+      upcoming: {},
+    };
+
+    taskList.forEach(t => {
+      if (t.dueDate < todayStr && !t.completed) {
+        groups.overdue.push(t);
+      } else if (t.dueDate === todayStr) {
+        groups.today.push(t);
+      } else if (t.dueDate === tomorrowStr) {
+        groups.tomorrow.push(t);
+      } else {
+        const d = t.dueDate || 'Unscheduled';
+        if (!groups.upcoming[d]) groups.upcoming[d] = [];
+        groups.upcoming[d].push(t);
+      }
+    });
+
+    return groups;
+  };
+
+  const dayGroups = groupTasksByDay(filtered);
   const currentCategory = categories.find(c => c.id === activeView);
   const CategoryIcon = currentCategory ? (ICON_MAP[currentCategory.icon] || Folder) : Inbox;
 
+  const formatDateLabel = (dateString) => {
+    try {
+      const d = new Date(dateString + 'T00:00:00');
+      return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
   return (
     <div className="task-list-container">
-      {/* Priority Filter Bar */}
+      {/* Priority Filter & View Mode Controls Bar */}
       <div className="filter-bar">
         <div className="filter-pills">
           <span className="filter-label"><Filter size={14} /> Priority:</span>
@@ -98,20 +158,115 @@ export const TaskList = () => {
           ))}
         </div>
 
-        <span className="tasks-count-summary">
-          {filtered.length} {filtered.length === 1 ? 'task' : 'tasks'}
-        </span>
+        <div className="view-mode-toggle-group">
+          <button
+            className={`btn-mode-pill ${viewMode === 'day-split' ? 'active' : ''}`}
+            onClick={() => setViewMode('day-split')}
+            title="Group tasks by day timeline"
+          >
+            <CalendarDays size={14} /> Day-Wise Split
+          </button>
+          <button
+            className={`btn-mode-pill ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+            title="Display flat task list"
+          >
+            <ListFilter size={14} /> Standard List
+          </button>
+        </div>
       </div>
 
-      {/* Task Cards Grid */}
+      {/* Task Rendering */}
       {filtered.length > 0 ? (
-        <div className="task-cards-grid">
-          {filtered.map(task => (
-            <TaskItem key={task.id} task={task} />
-          ))}
-        </div>
+        viewMode === 'list' ? (
+          /* Standard Flat List View */
+          <div className="task-cards-grid">
+            {filtered.map(task => (
+              <TaskItem key={task.id} task={task} />
+            ))}
+          </div>
+        ) : (
+          /* Day-Wise Split Timeline View */
+          <div className="day-split-container">
+            {/* Overdue Section */}
+            {dayGroups.overdue.length > 0 && (
+              <div className="day-group-section overdue-group">
+                <div className="day-group-header">
+                  <div className="day-title-left">
+                    <AlertCircle size={18} color="#ef4444" />
+                    <h3>Overdue Tasks</h3>
+                  </div>
+                  <span className="day-count-badge badge-overdue">{dayGroups.overdue.length} Tasks</span>
+                </div>
+                <div className="day-tasks-grid">
+                  {dayGroups.overdue.map(t => (
+                    <TaskItem key={t.id} task={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Today Section */}
+            <div className="day-group-section today-group">
+              <div className="day-group-header">
+                <div className="day-title-left">
+                  <Sun size={18} color="#f59e0b" />
+                  <h3>Today — {formatDateLabel(todayStr)}</h3>
+                </div>
+                <span className="day-count-badge badge-today">{dayGroups.today.length} Tasks</span>
+              </div>
+              <div className="day-tasks-grid">
+                {dayGroups.today.length > 0 ? (
+                  dayGroups.today.map(t => (
+                    <TaskItem key={t.id} task={t} />
+                  ))
+                ) : (
+                  <p className="day-empty-hint">No tasks scheduled for Today yet. Enjoy your day or add a task below!</p>
+                )}
+              </div>
+            </div>
+
+            {/* Tomorrow Section */}
+            <div className="day-group-section tomorrow-group">
+              <div className="day-group-header">
+                <div className="day-title-left">
+                  <Calendar size={18} color="#06b6d4" />
+                  <h3>Tomorrow — {formatDateLabel(tomorrowStr)}</h3>
+                </div>
+                <span className="day-count-badge badge-tomorrow">{dayGroups.tomorrow.length} Tasks</span>
+              </div>
+              <div className="day-tasks-grid">
+                {dayGroups.tomorrow.length > 0 ? (
+                  dayGroups.tomorrow.map(t => (
+                    <TaskItem key={t.id} task={t} />
+                  ))
+                ) : (
+                  <p className="day-empty-hint">No tasks scheduled for Tomorrow.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Upcoming Days Section */}
+            {Object.keys(dayGroups.upcoming).map(dateKey => (
+              <div key={dateKey} className="day-group-section upcoming-day-group">
+                <div className="day-group-header">
+                  <div className="day-title-left">
+                    <Clock size={18} color="#a855f7" />
+                    <h3>{formatDateLabel(dateKey)}</h3>
+                  </div>
+                  <span className="day-count-badge">{dayGroups.upcoming[dateKey].length} Tasks</span>
+                </div>
+                <div className="day-tasks-grid">
+                  {dayGroups.upcoming[dateKey].map(t => (
+                    <TaskItem key={t.id} task={t} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )
       ) : (
-        /* Elevated Empty State UI */
+        /* Empty State UI */
         <div className="empty-state glass-panel">
           <div className="empty-icon-wrap" style={{ backgroundColor: currentCategory ? `${currentCategory.color}20` : 'rgba(99, 102, 241, 0.15)' }}>
             <CategoryIcon size={44} color={currentCategory ? currentCategory.color : '#6366f1'} />
