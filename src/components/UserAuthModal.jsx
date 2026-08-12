@@ -1,144 +1,209 @@
 import React, { useState } from 'react';
 import { useTask } from '../context/TaskContext';
-import { X, Mail, ShieldCheck, RefreshCw, LogOut, CheckCircle2, User, Sparkles } from 'lucide-react';
+import {
+  X,
+  UserCheck,
+  ShieldCheck,
+  RefreshCw,
+  Copy,
+  Check,
+  Smartphone,
+  Laptop,
+  ArrowRight,
+  LogOut,
+  Mail,
+  Zap,
+  Cloud,
+  CloudDownload,
+  CloudUpload
+} from 'lucide-react';
 
-export const UserAuthModal = ({ isOpen, onClose }) => {
+export const UserAuthModal = () => {
   const {
     currentUserEmail,
+    cloudSyncId,
+    lastSyncedTime,
     loginWithEmail,
     logoutUser,
-    syncDataCloud,
+    connectCloudSyncId,
+    pushToOnlineCloud,
+    pullFromOnlineCloud,
     isSyncing,
-    tasks,
-    streakData
+    isAuthModalOpen,
+    setIsAuthModalOpen,
+    tasks
   } = useTask();
 
-  const [emailInput, setEmailInput] = useState('');
-  const [syncStatusMsg, setSyncStatusMsg] = useState('');
+  const [inputEmail, setInputEmail] = useState(currentUserEmail || '');
+  const [manualSyncId, setManualSyncId] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [statusMsg, setStatusMsg] = useState('');
 
-  if (!isOpen) return null;
+  if (!isAuthModalOpen) return null;
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (!emailInput.trim() || !emailInput.includes('@')) {
-      setSyncStatusMsg('Please enter a valid email address!');
-      return;
-    }
-    const success = loginWithEmail(emailInput.trim());
-    if (success) {
-      setSyncStatusMsg(`Successfully logged in as ${emailInput.trim()}! Your data is synced.`);
-      setTimeout(() => {
-        setSyncStatusMsg('');
-        onClose();
-      }, 1200);
-    }
+    if (!inputEmail.trim()) return;
+    setStatusMsg('Connecting to account & syncing data...');
+    await loginWithEmail(inputEmail);
+    setStatusMsg('✅ Account connected & synced across devices!');
+    setTimeout(() => setStatusMsg(''), 3000);
   };
 
-  const handleManualSync = () => {
-    syncDataCloud();
-    setSyncStatusMsg('Cloud sync completed! All devices with this email are up-to-date.');
-    setTimeout(() => setSyncStatusMsg(''), 3000);
+  const handleConnectSyncIdSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualSyncId.trim()) return;
+    setStatusMsg('Linking cloud sync ID...');
+    const success = await connectCloudSyncId(manualSyncId.trim());
+    if (success) {
+      setStatusMsg('✅ Devices paired successfully! Tasks imported.');
+      setManualSyncId('');
+    } else {
+      setStatusMsg('⚠️ Could not find cloud record for this Sync ID.');
+    }
+    setTimeout(() => setStatusMsg(''), 3500);
+  };
+
+  const handleCopySyncLink = () => {
+    if (!cloudSyncId) return;
+    const syncUrl = `${window.location.origin}${window.location.pathname}?syncId=${cloudSyncId}`;
+    navigator.clipboard.writeText(syncUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content auth-modal-card" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={() => setIsAuthModalOpen(false)}>
+      <div className="modal-content glass-panel auth-modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Modal Header */}
         <div className="modal-header">
           <div className="auth-header-title">
             <ShieldCheck size={22} color="#06b6d4" />
-            <h2>Cross-Device Account & Email Sync</h2>
+            <h2>Cross-Device Cloud Sync</h2>
           </div>
-          <button className="btn-icon" onClick={onClose}>
+          <button className="btn-icon" onClick={() => setIsAuthModalOpen(false)}>
             <X size={20} />
           </button>
         </div>
 
-        {currentUserEmail ? (
-          /* Active Logged-in State */
-          <div className="auth-active-body">
-            <div className="auth-user-card glass-panel">
-              <div className="user-avatar-wrap">
-                <User size={32} color="#6366f1" />
-              </div>
-              <div className="user-info-text">
-                <span className="user-status-tag">ACTIVE ACCOUNT</span>
-                <h3 className="user-email-display">{currentUserEmail}</h3>
-                <p className="user-meta-sub">
-                  {tasks.length} Tasks Synced • {streakData.count} Day Streak
-                </p>
-              </div>
-            </div>
+        <p className="auth-intro-desc">
+          Sync your tasks, daily habits, and streak progress real-time across Desktop, Mobile, and Vercel deployments.
+        </p>
 
-            {syncStatusMsg && (
-              <div className="auth-success-alert">
-                <CheckCircle2 size={16} color="#10b981" />
-                <span>{syncStatusMsg}</span>
-              </div>
-            )}
-
-            <div className="auth-actions-group">
-              <button
-                className="btn btn-primary"
-                onClick={handleManualSync}
-                disabled={isSyncing}
-              >
-                <RefreshCw size={16} className={isSyncing ? 'spin-icon' : ''} />
-                <span>{isSyncing ? 'Syncing...' : 'Sync Now Across Devices'}</span>
-              </button>
-
-              <button
-                className="btn btn-secondary text-danger"
-                onClick={() => { logoutUser(); setSyncStatusMsg('Logged out.'); }}
-              >
-                <LogOut size={16} />
-                <span>Sign Out / Switch Email</span>
-              </button>
-            </div>
-
-            <p className="auth-footer-note">
-              💡 <strong>Tip:</strong> Enter <code>{currentUserEmail}</code> on any desktop, laptop, or smartphone to automatically view and sync your exact data!
-            </p>
+        {/* Current Active User Profile Card */}
+        <div className="auth-user-card glass-panel">
+          <div className="user-avatar-wrap">
+            <UserCheck size={26} color="#6366f1" />
           </div>
-        ) : (
-          /* Login Form State */
-          <form onSubmit={handleLoginSubmit} className="modal-form">
-            <p className="auth-intro-desc">
-              Sign in with your Email ID to automatically synchronize all your tasks, habits, notes, and streak progress across all your desktops and smartphones!
-            </p>
+          <div className="user-info-text">
+            <span className="user-status-tag">
+              <Cloud size={12} color="#10b981" /> 🟢 REAL-TIME CLOUD ACTIVE
+            </span>
+            <span className="user-email-display">{currentUserEmail || 'No Email Signed In'}</span>
+            <span className="user-meta-sub">
+              {tasks.length} Tasks • Last Sync: {lastSyncedTime || 'Just Now'}
+            </span>
+          </div>
+        </div>
 
-            <div className="form-group">
-              <label>
-                <Mail size={16} color="#06b6d4" />
-                Email Address
-              </label>
-              <input
-                type="email"
-                className="form-input"
-                placeholder="Enter your email (e.g. krishna@gmail.com)..."
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
+        {statusMsg && (
+          <div className="auth-success-alert">
+            <Zap size={15} />
+            <span>{statusMsg}</span>
+          </div>
+        )}
 
-            {syncStatusMsg && (
-              <div className="auth-error-alert">
-                <span>{syncStatusMsg}</span>
+        {/* Cloud Pairing Section */}
+        <div className="cloud-pairing-section glass-panel">
+          <div className="pairing-header">
+            <Smartphone size={18} color="#06b6d4" />
+            <Laptop size={18} color="#6366f1" />
+            <span>Device Pairing & Mobile Link</span>
+          </div>
+
+          {cloudSyncId ? (
+            <div className="sync-key-display-wrap">
+              <label className="input-label">Your Cloud Sync Key:</label>
+              <div className="sync-key-box">
+                <code className="sync-code-text">{cloudSyncId}</code>
+                <button className="btn btn-secondary btn-sm" onClick={handleCopySyncLink}>
+                  {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                  <span>{copied ? 'Link Copied!' : 'Copy Mobile Link'}</span>
+                </button>
               </div>
-            )}
+              <p className="pairing-hint">
+                Open this link on your Mobile Phone browser to instantly pair devices!
+              </p>
+            </div>
+          ) : (
+            <button className="btn btn-primary" onClick={() => connectCloudSyncId()}>
+              <RefreshCw size={15} className={isSyncing ? 'spin-icon' : ''} />
+              <span>Generate Cloud Sync Key</span>
+            </button>
+          )}
 
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={onClose}>
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                <Sparkles size={16} />
-                <span>Sign In & Sync Devices</span>
+          {/* Manual Link Input */}
+          <form onSubmit={handleConnectSyncIdSubmit} className="manual-link-form">
+            <label className="input-label">Pair Mobile with Existing Sync Key:</label>
+            <div className="form-input-group">
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Paste Sync Key here..."
+                value={manualSyncId}
+                onChange={(e) => setManualSyncId(e.target.value)}
+              />
+              <button type="submit" className="btn btn-secondary btn-sm">
+                <span>Link</span>
+                <ArrowRight size={14} />
               </button>
             </div>
           </form>
-        )}
+        </div>
+
+        {/* Sync Controls Group */}
+        <div className="auth-actions-group">
+          <div className="cloud-sync-btn-row">
+            <button className="btn btn-secondary flex-1" onClick={() => pushToOnlineCloud()} disabled={isSyncing}>
+              <CloudUpload size={16} color="#6366f1" />
+              <span>{isSyncing ? 'Pushing...' : 'Push Tasks to Cloud'}</span>
+            </button>
+            <button className="btn btn-secondary flex-1" onClick={() => pullFromOnlineCloud()} disabled={isSyncing}>
+              <CloudDownload size={16} color="#06b6d4" />
+              <span>{isSyncing ? 'Pulling...' : 'Pull Tasks from Cloud'}</span>
+            </button>
+          </div>
+
+          <form onSubmit={handleLoginSubmit} className="email-change-form">
+            <label className="input-label">Switch Email Account:</label>
+            <div className="form-input-group">
+              <Mail size={16} className="input-icon-prefix" />
+              <input
+                type="email"
+                className="form-input"
+                placeholder="Enter email address..."
+                value={inputEmail}
+                onChange={(e) => setInputEmail(e.target.value)}
+                required
+              />
+              <button type="submit" className="btn btn-primary btn-sm">
+                <span>Connect</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="modal-footer">
+          {currentUserEmail && (
+            <button className="btn-text-danger" onClick={logoutUser}>
+              <LogOut size={14} />
+              <span>Disconnect Account</span>
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={() => setIsAuthModalOpen(false)}>
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
