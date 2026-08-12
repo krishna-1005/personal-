@@ -16,10 +16,18 @@ import { TaskAlarmModal } from './components/TaskAlarmModal';
 import { PunishmentModal } from './components/PunishmentModal';
 import { OpeningSplash } from './components/OpeningSplash';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { UserAuthModal } from './components/UserAuthModal';
 
 const AppContent = () => {
   const [activeTab, setActiveTab] = useState('tasks');
-  const { setActiveModalTask, setIsGuideOpen, setIsFocusModalOpen, setIsScratchpadOpen } = useTask();
+  const {
+    setActiveModalTask,
+    setIsGuideOpen,
+    setIsFocusModalOpen,
+    setIsScratchpadOpen,
+    isAuthModalOpen,
+    setIsAuthModalOpen
+  } = useTask();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -35,12 +43,13 @@ const AppContent = () => {
         setIsGuideOpen(false);
         setIsFocusModalOpen(false);
         setIsScratchpadOpen(false);
+        setIsAuthModalOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveModalTask, setIsGuideOpen, setIsFocusModalOpen, setIsScratchpadOpen]);
+  }, [setActiveModalTask, setIsGuideOpen, setIsFocusModalOpen, setIsScratchpadOpen, setIsAuthModalOpen]);
 
   return (
     <div className="app-container">
@@ -78,6 +87,7 @@ const AppContent = () => {
       <StreakCelebrationModal />
       <TaskAlarmModal />
       <PunishmentModal />
+      <UserAuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 };

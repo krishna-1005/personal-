@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { useTask } from '../context/TaskContext';
-import { Search, ArrowUpDown, Flame, Plus, X, Zap, Trophy, Menu } from 'lucide-react';
+import { Search, ArrowUpDown, Flame, Plus, X, Zap, Trophy, Menu, ShieldCheck } from 'lucide-react';
 
 const MOTIVATIONAL_QUOTES = [
   "Small daily steps lead to massive lifetime achievements. ⚡",
@@ -22,7 +22,9 @@ export const Header = ({ activeTab }) => {
     streakData,
     setActiveModalTask,
     isMobileMenuOpen,
-    setIsMobileMenuOpen
+    setIsMobileMenuOpen,
+    currentUserEmail,
+    setIsAuthModalOpen
   } = useTask();
 
   const searchInputRef = useRef(null);
@@ -61,7 +63,7 @@ export const Header = ({ activeTab }) => {
 
   return (
     <div className="header-wrapper">
-      {/* Top Mobile Bar (Matches Sketch: Menu Icon Left | TaskPulse PRO Right) */}
+      {/* Top Mobile Bar (Menu Icon Left | TaskPulse PRO Right) */}
       <div className="mobile-top-bar">
         <button
           className="btn-icon mobile-menu-btn"
@@ -75,29 +77,24 @@ export const Header = ({ activeTab }) => {
         <div className="mobile-brand-title">TaskPulse PRO</div>
       </div>
 
-      {/* Daily Motivation Banner Card (Matches Sketch: Daily Mot) */}
-      <div className="hero-banner glass-panel">
-        <div className="hero-content">
+      {/* Daily Motivation Banner Card (Redesigned Compact & Sleek) */}
+      <div className="hero-banner glass-panel hero-compact-mobile">
+        <div className="hero-compact-top">
           <div className="hero-tag">
-            <Zap size={14} color="#f59e0b" />
+            <Zap size={13} color="#f59e0b" />
             <span>DAILY MOTIVATION</span>
           </div>
-          <h2>Ready to conquer your goals, Champion? 🚀</h2>
-          <p className="hero-quote">"{randomQuote}"</p>
+
+          <div className="hero-compact-pct">
+            <Trophy size={14} color="#6366f1" />
+            <span>{percentDone}% Done</span>
+          </div>
         </div>
 
-        <div className="hero-progress-card">
-          <div className="hero-progress-text">
-            <div className="progress-info-head">
-              <Trophy size={16} color="#6366f1" />
-              <span>Today's Completion</span>
-            </div>
-            <span className="hero-percent">{percentDone}%</span>
-          </div>
-          <div className="hero-bar-bg">
-            <div className="hero-bar-fill" style={{ width: `${percentDone}%` }} />
-          </div>
-          <span className="hero-subtext">{completedCount} of {totalCount} completed</span>
+        <h2 className="hero-compact-heading">Ready to conquer your goals, Champion? 🚀</h2>
+
+        <div className="hero-bar-bg hero-compact-bar">
+          <div className="hero-bar-fill" style={{ width: `${percentDone}%` }} />
         </div>
       </div>
 
@@ -142,7 +139,17 @@ export const Header = ({ activeTab }) => {
             </div>
           )}
 
-          {/* 0 Day Streak Badge (Matches Sketch: [ 0 Day Str ]) */}
+          {/* User Email Account Sync Badge */}
+          <button
+            className="user-account-badge"
+            onClick={() => setIsAuthModalOpen(true)}
+            title="Click to Sync Email across devices"
+          >
+            <ShieldCheck size={15} color="#06b6d4" />
+            <span className="user-email-text">{currentUserEmail || 'Sync Email'}</span>
+          </button>
+
+          {/* Streak Badge */}
           <div className="streak-badge" title="Real Daily Productivity Streak">
             <Flame size={16} className="flame-icon" />
             <span className="streak-num">{streakData.count} Day Str</span>

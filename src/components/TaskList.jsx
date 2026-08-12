@@ -143,7 +143,7 @@ export const TaskList = () => {
 
   return (
     <div className="task-list-container">
-      {/* Priorities Filter Card (Matches Sketch: [ Priorities ]) */}
+      {/* Priorities Filter Card */}
       <div className="priorities-card glass-panel">
         <div className="priorities-card-header">
           <SlidersHorizontal size={15} color="#6366f1" />
@@ -190,7 +190,7 @@ export const TaskList = () => {
             ))}
           </div>
         ) : (
-          /* Day-Wise Split View (Matches Sketch: Today - Day wise, 2x2 grid, Next Day task) */
+          /* Day-Wise Split 2-Column Grid View (Matches Hand-Drawn Sketch) */
           <div className="day-split-container">
             {/* Overdue Section */}
             {dayGroups.overdue.length > 0 && (
@@ -210,7 +210,7 @@ export const TaskList = () => {
               </div>
             )}
 
-            {/* Today - Day wise Section (Matches Sketch Header: Today-Day wise | No of tasks) */}
+            {/* Today Section */}
             <div className="day-group-section today-group">
               <div className="day-group-header">
                 <div className="day-title-left">
@@ -219,8 +219,8 @@ export const TaskList = () => {
                 </div>
                 <span className="day-count-badge badge-today">{dayGroups.today.length} Tasks</span>
               </div>
-              
-              {/* 2x2 Task Cards Grid for Mobile (Matches Sketch: Task 1, 2, 3, 4) */}
+
+              {/* 2x2 Grid Layout for Mobile (Task 1, Task 2, Task 3, Task 4) */}
               <div className="day-tasks-grid mobile-2col-grid">
                 {dayGroups.today.length > 0 ? (
                   dayGroups.today.map(t => (
@@ -232,7 +232,7 @@ export const TaskList = () => {
               </div>
             </div>
 
-            {/* Next Day task Section (Matches Sketch: Next Day task) */}
+            {/* Next Day task Section */}
             <div className="day-group-section tomorrow-group">
               <div className="day-group-header">
                 <div className="day-title-left">

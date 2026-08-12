@@ -27,6 +27,8 @@ import {
   FileText,
   Layers,
   CalendarDays,
+  ShieldCheck,
+  UserCheck,
   X
 } from 'lucide-react';
 
@@ -58,11 +60,13 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
     setIsTemplatesOpen,
     setIsAmbientSoundOpen,
     isMobileMenuOpen,
-    setIsMobileMenuOpen
+    setIsMobileMenuOpen,
+    currentUserEmail,
+    setIsAuthModalOpen
   } = useTask();
 
   const todayStr = new Date().toISOString().split('T')[0];
-  
+
   const inboxCount = tasks.filter(t => !t.completed).length;
   const todayCount = tasks.filter(t => !t.completed && t.dueDate === todayStr).length;
   const upcomingCount = tasks.filter(t => !t.completed && t.dueDate > todayStr).length;
@@ -115,6 +119,20 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
           )}
         </div>
 
+        {/* User Account & Profile Banner Card */}
+        <div className="sidebar-profile-card" onClick={() => { setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }}>
+          <div className="profile-card-left">
+            <div className="profile-avatar-circle">
+              <UserCheck size={18} color="#06b6d4" />
+            </div>
+            <div className="profile-info-wrap">
+              <span className="profile-title-label">User Profile & Sync</span>
+              <span className="profile-email-sub">{currentUserEmail || 'Click to Login Email'}</span>
+            </div>
+          </div>
+          <ShieldCheck size={16} color="#10b981" />
+        </div>
+
         {/* Quick Action Button */}
         <div className="sidebar-action">
           <button className="btn btn-primary create-task-btn" onClick={() => { setActiveModalTask('new'); setIsMobileMenuOpen(false); }}>
@@ -128,7 +146,7 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
         <div className="sidebar-nav-scroll">
           <div className="nav-group">
             <span className="nav-group-title">VIEWS & AGENDA</span>
-            
+
             <button
               className={`nav-item ${activeTab === 'tasks' && activeView === 'inbox' ? 'active' : ''}`}
               onClick={() => handleNavClick('tasks', 'inbox')}
@@ -219,6 +237,11 @@ export const Sidebar = ({ activeTab, setActiveTab }) => {
 
           <div className="nav-group">
             <span className="nav-group-title">POWER TOOLS</span>
+
+            <button className="nav-item" onClick={() => { setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }}>
+              <UserCheck size={18} color="#06b6d4" />
+              <span>Account & Sync</span>
+            </button>
 
             <button className="nav-item" onClick={() => { setIsAmbientSoundOpen(true); setIsMobileMenuOpen(false); }}>
               <Headphones size={18} color="#06b6d4" />

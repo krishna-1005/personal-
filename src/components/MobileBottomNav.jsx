@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTask } from '../context/TaskContext';
-import { Inbox, Calendar, CalendarDays, Award, Menu, Plus } from 'lucide-react';
+import { Inbox, Calendar, CalendarDays, Award, User, Plus } from 'lucide-react';
 
 export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
   const {
@@ -10,7 +10,8 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
     setActiveView,
     isMobileMenuOpen,
     setIsMobileMenuOpen,
-    setActiveModalTask
+    setActiveModalTask,
+    setIsAuthModalOpen
   } = useTask();
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -24,7 +25,7 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
 
   return (
     <>
-      {/* Floating Action Button (+) on Mobile (Matches Sketch: round (+) at bottom right) */}
+      {/* Floating Action Button (+) on Mobile */}
       <button
         className="mobile-fab-btn"
         onClick={() => setActiveModalTask('new')}
@@ -33,7 +34,7 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
         <Plus size={26} color="#ffffff" strokeWidth={3} />
       </button>
 
-      {/* Bottom Navigation Bar (Matches Sketch: Tasks | Today | Time | Habit | ≡) */}
+      {/* Bottom Navigation Bar: Tasks | Today | Time | Habit | Profile */}
       <nav className="mobile-bottom-nav">
         <button
           className={`mobile-nav-pill ${activeTab === 'tasks' && activeView === 'inbox' ? 'active' : ''}`}
@@ -68,12 +69,14 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
           <span>Habit</span>
         </button>
 
+        {/* Profile / Account Sync Tab */}
         <button
-          className={`mobile-nav-pill ${isMobileMenuOpen ? 'active' : ''}`}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="mobile-nav-pill"
+          onClick={() => setIsAuthModalOpen(true)}
+          title="Open User Profile & Account Sync"
         >
-          <Menu size={20} />
-          <span>≡</span>
+          <User size={20} color="#06b6d4" />
+          <span>Profile</span>
         </button>
       </nav>
     </>

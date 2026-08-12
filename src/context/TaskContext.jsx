@@ -88,7 +88,28 @@ const SAMPLE_TASKS = [
 ];
 
 export const TaskProvider = ({ children }) => {
+  const [currentUserEmail, setCurrentUserEmail] = useState(() => {
+    return localStorage.getItem('taskpulse_user_email') || 'krishna@example.com';
+  });
+
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const getUserStorageKey = (email) => {
+    const clean = (email || 'default').toLowerCase().replace(/[^a-z0-9]/g, '_');
+    return `taskpulse_cloud_user_${clean}`;
+  };
+
   const [tasks, setTasks] = useState(() => {
+    const email = localStorage.getItem('taskpulse_user_email') || 'krishna@example.com';
+    const key = `taskpulse_cloud_user_${email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const userCloudData = localStorage.getItem(key);
+    if (userCloudData) {
+      try {
+        const parsed = JSON.parse(userCloudData);
+        if (parsed.tasks) return parsed.tasks;
+      } catch (e) {}
+    }
     const saved = localStorage.getItem('taskpulse_tasks');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -105,6 +126,15 @@ export const TaskProvider = ({ children }) => {
   });
 
   const [habits, setHabits] = useState(() => {
+    const email = localStorage.getItem('taskpulse_user_email') || 'krishna@example.com';
+    const key = `taskpulse_cloud_user_${email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const userCloudData = localStorage.getItem(key);
+    if (userCloudData) {
+      try {
+        const parsed = JSON.parse(userCloudData);
+        if (parsed.habits) return parsed.habits;
+      } catch (e) {}
+    }
     const saved = localStorage.getItem('taskpulse_habits');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
@@ -113,15 +143,19 @@ export const TaskProvider = ({ children }) => {
   });
 
   const [streakData, setStreakData] = useState(() => {
+    const email = localStorage.getItem('taskpulse_user_email') || 'krishna@example.com';
+    const key = `taskpulse_cloud_user_${email.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+    const userCloudData = localStorage.getItem(key);
+    if (userCloudData) {
+      try {
+        const parsed = JSON.parse(userCloudData);
+        if (parsed.streakData) return parsed.streakData;
+      } catch (e) {}
+    }
     const saved = localStorage.getItem('taskpulse_streak_engine');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        const todayStr = new Date().toISOString().split('T')[0];
-        const yesterdayDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-        if (parsed.lastCompletedDate && parsed.lastCompletedDate !== todayStr && parsed.lastCompletedDate !== yesterdayDate) {
-          return { count: 0, lastCompletedDate: parsed.lastCompletedDate, celebratedToday: false };
-        }
         return parsed;
       } catch (e) {}
     }
@@ -177,38 +211,95 @@ export const TaskProvider = ({ children }) => {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [celebratedStreakNum, setCelebratedStreakNum] = useState(0);
 
-  // Sync state changes to LocalStorage immediately
-  useEffect(() => { localStorage.setItem('taskpulse_tasks', JSON.stringify(tasks)); }, [tasks]);
-  useEffect(() => { localStorage.setItem('taskpulse_categories', JSON.stringify(categories)); }, [categories]);
-  useEffect(() => { localStorage.setItem('taskpulse_habits', JSON.stringify(habits)); }, [habits]);
-  useEffect(() => { localStorage.setItem('taskpulse_streak_engine', JSON.stringify(streakData)); }, [streakData]);
-  useEffect(() => { localStorage.setItem('taskpulse_scratchpad', scratchpad); }, [scratchpad]);
-  useEffect(() => { localStorage.setItem('taskpulse_punishments', JSON.stringify(punishmentLog)); }, [punishmentLog]);
+  // Auto Sync user cloud payload whenever core data changes
+  const saveUserDataToCloud = (emailToSave) => {
+    const email = emailToSave || currentUserEmail;
+    if (!email) return;
+    const key = getUserStorageKey(email);
+    const payload = {
+      email,
+      lastSyncedAt: new Date().toISOString(),
+      tasks,
+      categories,
+      habits,
+      streakData,
+      scratchpad,
+      focusStats,
+      punishmentLog
+    };
+    localStorage.setItem(key, JSON.stringify(payload));
+    localStorage.setItem('taskpulse_tasks', JSON.stringify(tasks));
+    localStorage.setItem('taskpulse_categories', JSON.stringify(categories));
+    localStorage.setItem('taskpulse_habits', JSON.stringify(habits));
+    localStorage.setItem('taskpulse_streak_engine', JSON.stringify(streakData));
+    localStorage.setItem('taskpulse_scratchpad', scratchpad);
+  };
+
+  useEffect(() => {
+    saveUserDataToCloud();
+  }, [tasks, categories, habits, streakData, scratchpad, focusStats, currentUserEmail]);
+
   useEffect(() => {
     localStorage.setItem('taskpulse_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-  useEffect(() => { localStorage.setItem('taskpulse_focus_stats', JSON.stringify(focusStats)); }, [focusStats]);
 
-  // Window Cross-Tab Storage Event Listener (Instant multi-tab sync when reopened or modified)
+  // Login with Email ID (Pulls user data across devices/browsers)
+  const loginWithEmail = (email) => {
+    const normalized = email.trim().toLowerCase();
+    localStorage.setItem('taskpulse_user_email', normalized);
+    setCurrentUserEmail(normalized);
+
+    const key = getUserStorageKey(normalized);
+    const existingCloudData = localStorage.getItem(key);
+
+    if (existingCloudData) {
+      try {
+        const parsed = JSON.parse(existingCloudData);
+        if (parsed.tasks) setTasks(parsed.tasks);
+        if (parsed.categories) setCategories(parsed.categories);
+        if (parsed.habits) setHabits(parsed.habits);
+        if (parsed.streakData) setStreakData(parsed.streakData);
+        if (parsed.scratchpad) setScratchpad(parsed.scratchpad);
+        if (parsed.focusStats) setFocusStats(parsed.focusStats);
+        if (parsed.punishmentLog) setPunishmentLog(parsed.punishmentLog);
+        return true;
+      } catch (e) {}
+    }
+
+    // Save current data under new user email
+    saveUserDataToCloud(normalized);
+    return true;
+  };
+
+  const logoutUser = () => {
+    setCurrentUserEmail('');
+    localStorage.removeItem('taskpulse_user_email');
+  };
+
+  const syncDataCloud = () => {
+    setIsSyncing(true);
+    saveUserDataToCloud();
+    setTimeout(() => setIsSyncing(false), 800);
+  };
+
+  // Listen to storage events across tabs & devices
   useEffect(() => {
     const handleStorageChange = (e) => {
-      if (e.key === 'taskpulse_tasks' && e.newValue) {
-        try { setTasks(JSON.parse(e.newValue)); } catch (err) {}
-      } else if (e.key === 'taskpulse_habits' && e.newValue) {
-        try { setHabits(JSON.parse(e.newValue)); } catch (err) {}
-      } else if (e.key === 'taskpulse_streak_engine' && e.newValue) {
-        try { setStreakData(JSON.parse(e.newValue)); } catch (err) {}
-      } else if (e.key === 'taskpulse_scratchpad' && e.newValue) {
-        setScratchpad(e.newValue);
-      } else if (e.key === 'taskpulse_focus_stats' && e.newValue) {
-        try { setFocusStats(JSON.parse(e.newValue)); } catch (err) {}
+      const currentKey = getUserStorageKey(currentUserEmail);
+      if (e.key === currentKey && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          if (parsed.tasks) setTasks(parsed.tasks);
+          if (parsed.habits) setHabits(parsed.habits);
+          if (parsed.streakData) setStreakData(parsed.streakData);
+          if (parsed.scratchpad) setScratchpad(parsed.scratchpad);
+        } catch (err) {}
       }
     };
-
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  }, [currentUserEmail]);
 
   const triggerPunishmentForMissedTask = (missedTask) => {
     const randomIndex = Math.floor(Math.random() * DEFAULT_PUNISHMENTS.length);
@@ -511,12 +602,12 @@ export const TaskProvider = ({ children }) => {
   };
 
   const exportData = () => {
-    const data = { tasks, categories, habits, streakData, scratchpad, focusStats, theme, punishmentLog };
+    const data = { currentUserEmail, tasks, categories, habits, streakData, scratchpad, focusStats, theme, punishmentLog };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `taskpulse-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `taskpulse-${currentUserEmail || 'backup'}-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -524,6 +615,7 @@ export const TaskProvider = ({ children }) => {
   const importData = (importedJson) => {
     try {
       const data = JSON.parse(importedJson);
+      if (data.currentUserEmail) loginWithEmail(data.currentUserEmail);
       if (data.tasks) setTasks(data.tasks);
       if (data.categories) setCategories(data.categories);
       if (data.habits) setHabits(data.habits);
@@ -540,6 +632,13 @@ export const TaskProvider = ({ children }) => {
   return (
     <TaskContext.Provider
       value={{
+        currentUserEmail,
+        loginWithEmail,
+        logoutUser,
+        syncDataCloud,
+        isSyncing,
+        isAuthModalOpen,
+        setIsAuthModalOpen,
         tasks,
         categories,
         habits,
