@@ -15,6 +15,7 @@ import { StreakCelebrationModal } from './components/StreakCelebrationModal';
 import { TaskAlarmModal } from './components/TaskAlarmModal';
 import { PunishmentModal } from './components/PunishmentModal';
 import { OpeningSplash } from './components/OpeningSplash';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 const AppContent = () => {
   const [activeTab, setActiveTab] = useState('tasks');
@@ -43,7 +44,7 @@ const AppContent = () => {
 
   return (
     <div className="app-container">
-      {/* Website Opening Startup Splash Screen */}
+      {/* Website Opening Splash Screen */}
       <OpeningSplash />
 
       {/* Ambient Mesh Glow Orbs */}
@@ -63,6 +64,9 @@ const AppContent = () => {
         {activeTab === 'habits' && <HabitsTracker />}
         {activeTab === 'stats' && <StatsDashboard />}
       </main>
+
+      {/* Relaxed Mobile Bottom Navigation & Floating Action Button */}
+      <MobileBottomNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {/* Overlays & Modals */}
       <TaskModal />
