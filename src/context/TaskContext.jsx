@@ -1,0 +1,605 @@
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import confetti from 'canvas-confetti';
+
+const TaskContext = createContext();
+
+const DEFAULT_PUNISHMENTS = [
+  {
+    id: 'p-1',
+    title: '💪 20 Pushups / Jumping Jacks Challenge',
+    description: 'Get your blood pumping right now to shake off lethargy and boost focus!',
+    icon: 'Dumbbell'
+  },
+  {
+    id: 'p-2',
+    title: '📵 1-Hour Social Media & Distraction Detox',
+    description: 'Close Instagram, YouTube, and X for the next 60 minutes. Deep work only.',
+    icon: 'SmartphoneOff'
+  },
+  {
+    id: 'p-3',
+    title: '❄️ Cold Face Splash & 2 Glasses of Water',
+    description: 'Hydrate immediately and splash cold water on your face to re-energize.',
+    icon: 'Droplets'
+  },
+  {
+    id: 'p-4',
+    title: '✍️ Write 3 Sentences on Why You Procrastinated',
+    description: 'Reflect honestly in the scratchpad notes: What distracted you and how will you fix it?',
+    icon: 'Edit3'
+  },
+  {
+    id: 'p-5',
+    title: '⏱️ 10-Minute Instant Redemption Sprint',
+    description: 'Set a 10-minute timer right now and finish the core subtask without stopping!',
+    icon: 'Zap'
+  }
+];
+
+const DEFAULT_CATEGORIES = [
+  { id: 'work', name: 'Work & Career', color: '#6366f1', icon: 'Briefcase' },
+  { id: 'personal', name: 'Personal Life', color: '#06b6d4', icon: 'User' },
+  { id: 'code', name: 'Dev & Projects', color: '#a855f7', icon: 'Code' },
+  { id: 'health', name: 'Health & Fitness', color: '#10b981', icon: 'Activity' },
+  { id: 'finance', name: 'Finance & Goals', color: '#f59e0b', icon: 'DollarSign' },
+];
+
+const DEFAULT_HABITS = [
+  { id: 'h-1', title: 'Drink 2L Water 💧', streak: 0, completedToday: false, history: [] },
+  { id: 'h-2', title: 'Read 20 Pages 📚', streak: 0, completedToday: false, history: [] },
+  { id: 'h-3', title: '30-Min Gym Workout 🏋️', streak: 0, completedToday: false, history: [] },
+  { id: 'h-4', title: 'Code / Learn New Skill 💻', streak: 0, completedToday: false, history: [] }
+];
+
+const SAMPLE_TASKS = [
+  {
+    id: 'task-1',
+    title: 'Design TaskPulse Pro UI Components',
+    description: 'Build sleek glassmorphism sidebar, task cards, and Pomodoro widget with custom CSS.',
+    category: 'code',
+    priority: 'high',
+    dueDate: new Date().toISOString().split('T')[0],
+    linkUrl: 'https://github.com',
+    completed: false,
+    starred: true,
+    tags: ['UI/UX', 'React'],
+    estimatedTime: 25,
+    subtasks: [
+      { id: 'sub-1', title: 'Create index.css design tokens', completed: false },
+      { id: 'sub-2', title: 'Implement TaskCard micro-animations', completed: false }
+    ],
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'task-2',
+    title: 'Review Weekly Fitness & Meal Prep Plan',
+    description: 'Schedule gym workouts for Mon/Wed/Fri and prepare high-protein meals.',
+    category: 'health',
+    priority: 'medium',
+    dueDate: new Date().toISOString().split('T')[0],
+    linkUrl: 'https://youtube.com',
+    completed: false,
+    starred: false,
+    tags: ['Fitness'],
+    estimatedTime: 15,
+    subtasks: [],
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+  }
+];
+
+export const TaskProvider = ({ children }) => {
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('taskpulse_tasks');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return SAMPLE_TASKS;
+  });
+
+  const [categories, setCategories] = useState(() => {
+    const saved = localStorage.getItem('taskpulse_categories');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return DEFAULT_CATEGORIES;
+  });
+
+  const [habits, setHabits] = useState(() => {
+    const saved = localStorage.getItem('taskpulse_habits');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return DEFAULT_HABITS;
+  });
+
+  const [streakData, setStreakData] = useState(() => {
+    const saved = localStorage.getItem('taskpulse_streak_engine');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const todayStr = new Date().toISOString().split('T')[0];
+        const yesterdayDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        if (parsed.lastCompletedDate && parsed.lastCompletedDate !== todayStr && parsed.lastCompletedDate !== yesterdayDate) {
+          return { count: 0, lastCompletedDate: parsed.lastCompletedDate, celebratedToday: false };
+        }
+        return parsed;
+      } catch (e) {}
+    }
+    return { count: 0, lastCompletedDate: null, celebratedToday: false };
+  });
+
+  // Punishment & Discipline Engine
+  const [activePunishment, setActivePunishment] = useState(null);
+  const [punishmentTargetTask, setPunishmentTargetTask] = useState(null);
+  const [punishmentLog, setPunishmentLog] = useState(() => {
+    const saved = localStorage.getItem('taskpulse_punishments');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
+  // Mobile Menu State
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Live Timer Countdown Engine
+  const [runningTaskId, setRunningTaskId] = useState(null);
+  const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
+  const [isTimerPaused, setIsTimerPaused] = useState(false);
+  const [alarmTask, setAlarmTask] = useState(null);
+
+  const alarmAudioIntervalRef = useRef(null);
+
+  const [scratchpad, setScratchpad] = useState(() => {
+    return localStorage.getItem('taskpulse_scratchpad') || '💡 Brain Dump & Quick Notes:\n- Call bank regarding card update\n- Read Atomic Habits';
+  });
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('taskpulse_theme') || 'dark';
+  });
+
+  const [activeView, setActiveView] = useState('inbox');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('dueDate');
+  const [selectedTag, setSelectedTag] = useState(null);
+
+  const [focusStats, setFocusStats] = useState(() => {
+    const saved = localStorage.getItem('taskpulse_focus_stats');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { totalFocusMinutes: 0, completedSessions: 0 };
+  });
+
+  // Modals Overlays
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [activeModalTask, setActiveModalTask] = useState(null);
+  const [isFocusModalOpen, setIsFocusModalOpen] = useState(false);
+  const [focusTask, setFocusTask] = useState(null);
+  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [isAmbientSoundOpen, setIsAmbientSoundOpen] = useState(false);
+  const [showStreakModal, setShowStreakModal] = useState(false);
+  const [celebratedStreakNum, setCelebratedStreakNum] = useState(0);
+
+  // Local Storage Save
+  useEffect(() => { localStorage.setItem('taskpulse_tasks', JSON.stringify(tasks)); }, [tasks]);
+  useEffect(() => { localStorage.setItem('taskpulse_categories', JSON.stringify(categories)); }, [categories]);
+  useEffect(() => { localStorage.setItem('taskpulse_habits', JSON.stringify(habits)); }, [habits]);
+  useEffect(() => { localStorage.setItem('taskpulse_streak_engine', JSON.stringify(streakData)); }, [streakData]);
+  useEffect(() => { localStorage.setItem('taskpulse_scratchpad', scratchpad); }, [scratchpad]);
+  useEffect(() => { localStorage.setItem('taskpulse_punishments', JSON.stringify(punishmentLog)); }, [punishmentLog]);
+  useEffect(() => {
+    localStorage.setItem('taskpulse_theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+  useEffect(() => { localStorage.setItem('taskpulse_focus_stats', JSON.stringify(focusStats)); }, [focusStats]);
+
+  // Check Overdue Tasks & Assign Punishment
+  const triggerPunishmentForMissedTask = (missedTask) => {
+    // Pick random punishment challenge
+    const randomIndex = Math.floor(Math.random() * DEFAULT_PUNISHMENTS.length);
+    const chosenPunishment = DEFAULT_PUNISHMENTS[randomIndex];
+
+    setActivePunishment(chosenPunishment);
+    setPunishmentTargetTask(missedTask);
+
+    // Reset Streak as penalty
+    setStreakData(prev => ({ ...prev, count: 0 }));
+  };
+
+  const acceptAndCompletePunishment = () => {
+    if (activePunishment && punishmentTargetTask) {
+      setPunishmentLog(prev => [
+        {
+          id: `p-log-${Date.now()}`,
+          punishmentTitle: activePunishment.title,
+          missedTaskTitle: punishmentTargetTask.title,
+          completedAt: new Date().toISOString()
+        },
+        ...prev
+      ]);
+    }
+    setActivePunishment(null);
+    setPunishmentTargetTask(null);
+  };
+
+  // Live Timer Countdown Interval
+  useEffect(() => {
+    let timer = null;
+    if (runningTaskId && !isTimerPaused && activeTimerSeconds > 0) {
+      timer = setInterval(() => {
+        setActiveTimerSeconds(prev => prev - 1);
+      }, 1000);
+    } else if (runningTaskId && activeTimerSeconds === 0 && !isTimerPaused) {
+      const tObj = tasks.find(t => t.id === runningTaskId);
+      if (tObj) {
+        setAlarmTask(tObj);
+        triggerAlarmChimeSound();
+        logFocusSession(tObj.estimatedTime || 15);
+      }
+      setRunningTaskId(null);
+    }
+    return () => clearInterval(timer);
+  }, [runningTaskId, isTimerPaused, activeTimerSeconds, tasks]);
+
+  const triggerAlarmChimeSound = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      let count = 0;
+      alarmAudioIntervalRef.current = setInterval(() => {
+        if (count >= 5) {
+          clearInterval(alarmAudioIntervalRef.current);
+          return;
+        }
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+        count++;
+      }, 500);
+    } catch (e) {}
+  };
+
+  const stopAlarmSound = () => {
+    if (alarmAudioIntervalRef.current) {
+      clearInterval(alarmAudioIntervalRef.current);
+    }
+    setAlarmTask(null);
+  };
+
+  const startTaskTimer = (taskId) => {
+    const target = tasks.find(t => t.id === taskId);
+    if (!target) return;
+
+    if (runningTaskId === taskId) {
+      setIsTimerPaused(false);
+    } else {
+      setRunningTaskId(taskId);
+      setActiveTimerSeconds((target.estimatedTime || 15) * 60);
+      setIsTimerPaused(false);
+    }
+  };
+
+  const pauseTaskTimer = () => {
+    setIsTimerPaused(true);
+  };
+
+  const stopTaskTimer = () => {
+    setRunningTaskId(null);
+    setActiveTimerSeconds(0);
+    setIsTimerPaused(false);
+  };
+
+  const addExtraMinutesToTaskTimer = (mins) => {
+    setActiveTimerSeconds(prev => prev + mins * 60);
+    if (alarmTask) {
+      setRunningTaskId(alarmTask.id);
+      stopAlarmSound();
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  const checkAndRecordDailyStreak = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    setStreakData(prev => {
+      if (prev.lastCompletedDate === todayStr) return prev;
+
+      let newCount = 1;
+      if (prev.lastCompletedDate === yesterdayStr) {
+        newCount = prev.count + 1;
+      } else {
+        newCount = 1;
+      }
+
+      try {
+        confetti({
+          particleCount: 100,
+          spread: 90,
+          origin: { y: 0.6 },
+          colors: ['#f59e0b', '#6366f1', '#10b981', '#ec4899', '#06b6d4']
+        });
+      } catch (e) {}
+
+      setCelebratedStreakNum(newCount);
+      setShowStreakModal(true);
+
+      return { count: newCount, lastCompletedDate: todayStr, celebratedToday: true };
+    });
+  };
+
+  const addTask = (newTaskData) => {
+    let link = newTaskData.linkUrl ? newTaskData.linkUrl.trim() : '';
+    if (link && !/^https?:\/\//i.test(link)) {
+      link = `https://${link}`;
+    }
+
+    const newTask = {
+      id: `task-${Date.now()}`,
+      title: newTaskData.title.trim(),
+      description: newTaskData.description || '',
+      category: newTaskData.category || 'personal',
+      priority: newTaskData.priority || 'medium',
+      dueDate: newTaskData.dueDate || new Date().toISOString().split('T')[0],
+      linkUrl: link,
+      completed: false,
+      starred: !!newTaskData.starred,
+      tags: newTaskData.tags || [],
+      estimatedTime: parseInt(newTaskData.estimatedTime, 10) || 15,
+      subtasks: newTaskData.subtasks || [],
+      createdAt: new Date().toISOString(),
+    };
+    setTasks(prev => [newTask, ...prev]);
+    setActiveModalTask(null);
+  };
+
+  const updateTask = (taskId, updatedFields) => {
+    if (updatedFields.linkUrl) {
+      let link = updatedFields.linkUrl.trim();
+      if (link && !/^https?:\/\//i.test(link)) {
+        link = `https://${link}`;
+      }
+      updatedFields.linkUrl = link;
+    }
+    setTasks(prev =>
+      prev.map(t => (t.id === taskId ? { ...t, ...updatedFields } : t))
+    );
+    setActiveModalTask(null);
+  };
+
+  const deleteTask = (taskId) => {
+    if (runningTaskId === taskId) stopTaskTimer();
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  };
+
+  const toggleTaskComplete = (taskId) => {
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === taskId) {
+          const newCompletedState = !t.completed;
+          if (newCompletedState) {
+            checkAndRecordDailyStreak();
+            if (runningTaskId === taskId) stopTaskTimer();
+          }
+          return {
+            ...t,
+            completed: newCompletedState,
+            subtasks: t.subtasks.map(s => ({ ...s, completed: newCompletedState }))
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  const toggleSubtask = (taskId, subtaskId) => {
+    setTasks(prev =>
+      prev.map(t => {
+        if (t.id === taskId) {
+          const updatedSubtasks = t.subtasks.map(s =>
+            s.id === subtaskId ? { ...s, completed: !s.completed } : s
+          );
+          const allDone = updatedSubtasks.length > 0 && updatedSubtasks.every(s => s.completed);
+          if (allDone) checkAndRecordDailyStreak();
+          return { ...t, subtasks: updatedSubtasks, completed: allDone };
+        }
+        return t;
+      })
+    );
+  };
+
+  const toggleStar = (taskId) => {
+    setTasks(prev =>
+      prev.map(t => (t.id === taskId ? { ...t, starred: !t.starred } : t))
+    );
+  };
+
+  const duplicateTask = (taskId) => {
+    const taskToDup = tasks.find(t => t.id === taskId);
+    if (!taskToDup) return;
+    const duplicated = {
+      ...taskToDup,
+      id: `task-${Date.now()}`,
+      title: `${taskToDup.title} (Copy)`,
+      completed: false,
+      subtasks: taskToDup.subtasks.map(s => ({ ...s, id: `sub-${Date.now()}-${Math.random()}`, completed: false })),
+      createdAt: new Date().toISOString(),
+    };
+    setTasks(prev => [duplicated, ...prev]);
+  };
+
+  const toggleHabit = (habitId) => {
+    setHabits(prev =>
+      prev.map(h => {
+        if (h.id === habitId) {
+          const isNowDone = !h.completedToday;
+          if (isNowDone) checkAndRecordDailyStreak();
+          return {
+            ...h,
+            completedToday: isNowDone,
+            streak: isNowDone ? h.streak + 1 : Math.max(0, h.streak - 1)
+          };
+        }
+        return h;
+      })
+    );
+  };
+
+  const addHabit = (title) => {
+    setHabits(prev => [...prev, { id: `h-${Date.now()}`, title: title.trim(), streak: 0, completedToday: false, history: [] }]);
+  };
+
+  const deleteHabit = (habitId) => {
+    setHabits(prev => prev.filter(h => h.id !== habitId));
+  };
+
+  const loadTemplate = (templateType) => {
+    let presetTasks = [];
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    if (templateType === 'project') {
+      presetTasks = [
+        {
+          title: '🚀 Define Project Scope',
+          description: 'Outline milestones and user requirements.',
+          category: 'code',
+          priority: 'urgent',
+          dueDate: todayStr,
+          linkUrl: 'https://github.com',
+          starred: true,
+          tags: ['Project'],
+          estimatedTime: 25,
+          subtasks: [
+            { id: 'p1', title: 'Write spec doc', completed: false },
+            { id: 'p2', title: 'Design database schema', completed: false }
+          ]
+        }
+      ];
+    }
+
+    presetTasks.forEach(pt => addTask(pt));
+    setIsTemplatesOpen(false);
+  };
+
+  const logFocusSession = (minutes) => {
+    setFocusStats(prev => ({
+      ...prev,
+      totalFocusMinutes: prev.totalFocusMinutes + minutes,
+      completedSessions: prev.completedSessions + 1,
+    }));
+  };
+
+  const exportData = () => {
+    const data = { tasks, categories, habits, streakData, scratchpad, focusStats, theme, punishmentLog };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `taskpulse-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = (importedJson) => {
+    try {
+      const data = JSON.parse(importedJson);
+      if (data.tasks) setTasks(data.tasks);
+      if (data.categories) setCategories(data.categories);
+      if (data.habits) setHabits(data.habits);
+      if (data.streakData) setStreakData(data.streakData);
+      if (data.scratchpad) setScratchpad(data.scratchpad);
+      if (data.focusStats) setFocusStats(data.focusStats);
+      if (data.punishmentLog) setPunishmentLog(data.punishmentLog);
+      alert('Data restored successfully!');
+    } catch (e) {
+      alert('Invalid backup JSON file.');
+    }
+  };
+
+  return (
+    <TaskContext.Provider
+      value={{
+        tasks,
+        categories,
+        habits,
+        streakData,
+        runningTaskId,
+        activeTimerSeconds,
+        isTimerPaused,
+        alarmTask,
+        activePunishment,
+        punishmentTargetTask,
+        punishmentLog,
+        scratchpad,
+        theme,
+        activeView,
+        searchQuery,
+        sortBy,
+        selectedTag,
+        focusStats,
+        isGuideOpen,
+        activeModalTask,
+        isFocusModalOpen,
+        focusTask,
+        isScratchpadOpen,
+        isTemplatesOpen,
+        isAmbientSoundOpen,
+        showStreakModal,
+        celebratedStreakNum,
+        isMobileMenuOpen,
+        setIsMobileMenuOpen,
+        triggerPunishmentForMissedTask,
+        acceptAndCompletePunishment,
+        startTaskTimer,
+        pauseTaskTimer,
+        stopTaskTimer,
+        stopAlarmSound,
+        addExtraMinutesToTaskTimer,
+        setShowStreakModal,
+        setActiveView,
+        setSearchQuery,
+        setSortBy,
+        setSelectedTag,
+        setScratchpad,
+        toggleTheme,
+        addTask,
+        updateTask,
+        deleteTask,
+        toggleTaskComplete,
+        toggleSubtask,
+        toggleStar,
+        duplicateTask,
+        toggleHabit,
+        addHabit,
+        deleteHabit,
+        loadTemplate,
+        logFocusSession,
+        exportData,
+        importData,
+        setIsGuideOpen,
+        setActiveModalTask,
+        setIsFocusModalOpen,
+        setFocusTask,
+        setIsScratchpadOpen,
+        setIsTemplatesOpen,
+        setIsAmbientSoundOpen
+      }}
+    >
+      {children}
+    </TaskContext.Provider>
+  );
+};
+
+export const useTask = () => useContext(TaskContext);
