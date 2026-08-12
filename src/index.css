@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TaskPulse Pro — Relaxed Mobile UX & Master Stylesheet (v11.0)
+   TaskPulse Pro — Exact Mobile Wireframe Layout Stylesheet (v12.0)
    ========================================================================== */
 
 :root {
@@ -87,106 +87,23 @@ body {
   pointer-events: none;
 }
 
-.splash-background-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+.splash-background-glow { position: absolute; inset: 0; pointer-events: none; }
+.splash-orb-1 { position: absolute; top: 20%; left: 25%; width: 50vw; height: 50vw; border-radius: 50%; background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(168, 85, 247, 0.15) 50%, transparent 70%); filter: blur(90px); animation: splashOrbPulse 3s ease-in-out infinite alternate; }
+.splash-orb-2 { position: absolute; bottom: 20%; right: 25%; width: 50vw; height: 50vw; border-radius: 50%; background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%); filter: blur(90px); animation: splashOrbPulse 3s ease-in-out infinite alternate-reverse; }
 
-.splash-orb-1 {
-  position: absolute;
-  top: 20%;
-  left: 25%;
-  width: 50vw;
-  height: 50vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.35) 0%, rgba(168, 85, 247, 0.15) 50%, transparent 70%);
-  filter: blur(90px);
-  animation: splashOrbPulse 3s ease-in-out infinite alternate;
-}
+@keyframes splashOrbPulse { 0% { transform: scale(0.9); opacity: 0.7; } 100% { transform: scale(1.1); opacity: 1; } }
 
-.splash-orb-2 {
-  position: absolute;
-  bottom: 20%;
-  right: 25%;
-  width: 50vw;
-  height: 50vw;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
-  filter: blur(90px);
-  animation: splashOrbPulse 3s ease-in-out infinite alternate-reverse;
-}
+.splash-container { position: relative; z-index: 10; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 1.75rem !important; max-width: 480px; width: 90%; text-align: center; }
+.splash-logo-wrapper { position: relative; width: 110px; height: 110px; display: flex !important; align-items: center !important; justify-content: center !important; }
+.splash-logo-core { width: 80px; height: 80px; border-radius: 24px; background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.5), rgba(6, 182, 212, 0.25)); border: 2px solid rgba(99, 102, 241, 0.6); display: flex !important; align-items: center !important; justify-content: center !important; box-shadow: 0 0 40px rgba(99, 102, 241, 0.5); position: relative; z-index: 2; }
+.splash-sparkle-anim { animation: sparkleRotate 3s linear infinite; }
 
-@keyframes splashOrbPulse {
-  0% { transform: scale(0.9); opacity: 0.7; }
-  100% { transform: scale(1.1); opacity: 1; }
-}
+@keyframes sparkleRotate { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
 
-.splash-container {
-  position: relative;
-  z-index: 10;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 1.75rem !important;
-  max-width: 480px;
-  width: 90%;
-  text-align: center;
-}
+.splash-pulse-ring-1 { position: absolute; inset: -15px; border-radius: 35px; border: 1px solid rgba(99, 102, 241, 0.4); animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+.splash-pulse-ring-2 { position: absolute; inset: -30px; border-radius: 45px; border: 1px solid rgba(6, 182, 212, 0.3); animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) 0.4s infinite; }
 
-.splash-logo-wrapper {
-  position: relative;
-  width: 110px;
-  height: 110px;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.splash-logo-core {
-  width: 80px;
-  height: 80px;
-  border-radius: 24px;
-  background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.5), rgba(6, 182, 212, 0.25));
-  border: 2px solid rgba(99, 102, 241, 0.6);
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-shadow: 0 0 40px rgba(99, 102, 241, 0.5);
-  position: relative;
-  z-index: 2;
-}
-
-.splash-sparkle-anim {
-  animation: sparkleRotate 3s linear infinite;
-}
-
-@keyframes sparkleRotate {
-  0% { transform: rotate(0deg) scale(1); }
-  50% { transform: rotate(180deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(1); }
-}
-
-.splash-pulse-ring-1 {
-  position: absolute;
-  inset: -15px;
-  border-radius: 35px;
-  border: 1px solid rgba(99, 102, 241, 0.4);
-  animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.splash-pulse-ring-2 {
-  position: absolute;
-  inset: -30px;
-  border-radius: 45px;
-  border: 1px solid rgba(6, 182, 212, 0.3);
-  animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) 0.4s infinite;
-}
-
-@keyframes pulseRing {
-  0% { transform: scale(0.85); opacity: 1; }
-  100% { transform: scale(1.25); opacity: 0; }
-}
+@keyframes pulseRing { 0% { transform: scale(0.85); opacity: 1; } 100% { transform: scale(1.25); opacity: 0; } }
 
 .splash-text-group { display: flex !important; flex-direction: column !important; gap: 0.4rem !important; }
 .splash-brand-title { font-size: 2.5rem !important; font-weight: 800 !important; letter-spacing: -0.03em !important; color: #ffffff; }
@@ -269,7 +186,26 @@ body {
 .sort-select { background: transparent; border: none; color: var(--text-primary); font-size: 0.85rem; outline: none; cursor: pointer; }
 .streak-badge { display: flex !important; align-items: center !important; gap: 0.4rem !important; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); padding: 0.45rem 0.9rem; border-radius: var(--radius-full); font-size: 0.82rem; font-weight: 700; color: #f59e0b; }
 
-/* Filter Bar */
+/* Priorities Filter Card */
+.priorities-card {
+  padding: 0.85rem 1.1rem !important;
+  margin-bottom: 1.25rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  flex-wrap: wrap !important;
+}
+
+.priorities-card-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  color: var(--text-secondary) !important;
+}
+
 .filter-bar { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; margin-bottom: 1.25rem !important; flex-wrap: wrap !important; gap: 0.75rem !important; }
 .filter-pills { display: flex !important; flex-direction: row !important; align-items: center !important; gap: 0.4rem !important; flex-wrap: wrap !important; }
 .filter-label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: flex !important; align-items: center !important; gap: 0.3rem !important; margin-right: 0.2rem; }
@@ -387,14 +323,16 @@ body {
 .sidebar-footer { margin-top: auto; display: flex !important; align-items: center !important; justify-content: space-around !important; padding-top: 0.85rem; border-top: 1px solid var(--border-glass); flex-shrink: 0; }
 
 /* --------------------------------------------------------------------------
-   RELAXED MOBILE UX BREAKPOINTS (<= 768px)
+   EXACT MOBILE WIREFRAME BREAKPOINTS (<= 768px)
+   Matches sketch: Top Bar (Menu | Title), Daily Mot, Search+Streak, Priorities, 2x2 Grid
    -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
+  /* Top Mobile Bar (Menu left | TaskPulse PRO right) */
   .mobile-top-bar {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 0.75rem 1rem !important;
+    padding: 0.65rem 1rem !important;
     background: rgba(11, 17, 30, 0.95) !important;
     border-bottom: 1px solid var(--border-glass) !important;
     position: sticky !important;
@@ -402,11 +340,29 @@ body {
     z-index: 100 !important;
   }
 
-  .mobile-app-title { font-family: 'Outfit', sans-serif !important; font-size: 1.1rem !important; font-weight: 800 !important; color: #ffffff !important; }
-  .desktop-add-btn { display: none !important; }
-  .mobile-add-btn { display: none !important; }
+  .mobile-menu-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    color: var(--text-primary) !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    padding: 0.3rem 0.5rem !important;
+  }
 
-  /* Relaxed Mobile Bottom Navigation Bar */
+  .mobile-brand-title {
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  .desktop-add-btn, .desktop-only-sort {
+    display: none !important;
+  }
+
+  /* Bottom Nav & FAB */
   .mobile-bottom-nav {
     display: flex !important;
     align-items: center !important;
@@ -421,7 +377,7 @@ body {
     -webkit-backdrop-filter: blur(16px) !important;
     border-top: 1px solid var(--border-glass) !important;
     z-index: 1200 !important;
-    padding: 0 0.5rem !important;
+    padding: 0 0.4rem !important;
   }
 
   .mobile-nav-pill {
@@ -429,7 +385,7 @@ body {
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 0.2rem !important;
+    gap: 0.15rem !important;
     background: transparent !important;
     border: none !important;
     color: var(--text-muted) !important;
@@ -437,9 +393,7 @@ body {
     font-weight: 600 !important;
     cursor: pointer !important;
     position: relative !important;
-    padding: 0.35rem 0.6rem !important;
-    border-radius: var(--radius-sm) !important;
-    transition: all 0.2s ease !important;
+    padding: 0.35rem 0.5rem !important;
   }
 
   .mobile-nav-pill.active {
@@ -449,7 +403,7 @@ body {
   .mobile-badge {
     position: absolute !important;
     top: 2px !important;
-    right: 6px !important;
+    right: 4px !important;
     font-size: 0.6rem !important;
     font-weight: 800 !important;
     background: var(--accent-primary) !important;
@@ -458,7 +412,7 @@ body {
     border-radius: 8px !important;
   }
 
-  /* Floating Action Button (FAB) + Task */
+  /* Floating Action Button (+) */
   .mobile-fab-btn {
     display: flex !important;
     align-items: center !important;
@@ -474,11 +428,6 @@ body {
     border: none !important;
     box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5) !important;
     cursor: pointer !important;
-    transition: transform 0.2s ease !important;
-  }
-
-  .mobile-fab-btn:active {
-    transform: scale(0.92) !important;
   }
 
   .app-container {
@@ -517,72 +466,92 @@ body {
     z-index: 1400 !important;
   }
 
-  .mobile-close-btn { margin-left: auto !important; }
-
-  /* Relaxed Mobile Hero Banner */
-  .hero-banner {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: 1.1rem 1rem !important;
-    gap: 1rem !important;
-  }
-
-  .hero-quote {
-    display: none !important; /* Hide verbose text to declutter mobile */
-  }
-
-  .hero-progress-card {
-    min-width: 100% !important;
-  }
-
+  /* Search Section + Streak Badge Side-by-Side (Matches Sketch: [ Search section ] [ 0 Day Str ]) */
   .app-header {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 0.85rem !important;
-  }
-
-  .header-controls {
-    width: 100% !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
-
-  .search-bar-container {
-    min-width: 100% !important;
-    width: 100% !important;
-  }
-
-  .filter-bar {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-  }
-
-  /* Relaxed Mobile Task Cards */
-  .task-card {
-    padding: 1rem 1.1rem !important;
-  }
-
-  .task-main-row {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 0.75rem !important;
   }
 
+  .header-controls {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+
+  .search-bar-container {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .search-input {
+    padding: 0.55rem 1.8rem 0.55rem 2.2rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  .streak-badge {
+    flex-shrink: 0 !important;
+    padding: 0.45rem 0.7rem !important;
+    font-size: 0.76rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* Priorities Card (Matches Sketch) */
+  .priorities-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 0.85rem 1rem !important;
+    gap: 0.6rem !important;
+  }
+
+  /* 2x2 Task Cards Grid for Mobile (Matches Sketch: Task 1, Task 2, Task 3, Task 4) */
+  .mobile-2col-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.65rem !important;
+    padding-left: 0 !important;
+    border-left: none !important;
+  }
+
+  .task-card {
+    padding: 0.85rem 0.85rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 120px !important;
+  }
+
+  .task-main-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.4rem !important;
+  }
+
+  .task-title {
+    font-size: 0.95rem !important;
+  }
+
   .task-actions {
     margin-left: 0 !important;
-    justify-content: flex-end !important;
     width: 100% !important;
-    padding-top: 0.5rem !important;
-    border-top: 1px dashed var(--border-glass) !important;
+    justify-content: flex-start !important;
+    gap: 0.2rem !important;
   }
 
-  .running-timer-controls {
-    flex-direction: column !important;
-    align-items: stretch !important;
+  .hero-banner {
+    padding: 1.1rem 1rem !important;
+    gap: 0.85rem !important;
   }
 
-  .live-countdown-badge {
-    justify-content: center !important;
+  .hero-quote {
+    display: none !important;
+  }
+
+  .hero-progress-card {
+    min-width: 100% !important;
   }
 
   .modal-content {

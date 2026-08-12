@@ -47,9 +47,10 @@ export const Header = ({ activeTab }) => {
     if (activeTab === 'stats') return 'Productivity Analytics';
     if (activeTab === 'habits') return 'Daily Habit Tracker';
     switch (activeView) {
-      case 'inbox': return 'Inbox — All Tasks';
-      case 'today': return "Today's Agenda";
-      case 'upcoming': return 'Upcoming Schedule';
+      case 'inbox': return 'Inbox — All tasks';
+      case 'today': return "Today — Day wise";
+      case 'day-schedule': return 'Day-Wise Schedule';
+      case 'upcoming': return 'Next Day task';
       case 'starred': return 'Starred & High Priority';
       case 'completed': return 'Completed Wins';
       default:
@@ -60,22 +61,21 @@ export const Header = ({ activeTab }) => {
 
   return (
     <div className="header-wrapper">
-      {/* Mobile Top Bar */}
+      {/* Top Mobile Bar (Matches Sketch: Menu Icon Left | TaskPulse PRO Right) */}
       <div className="mobile-top-bar">
         <button
           className="btn-icon mobile-menu-btn"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          title="Toggle Navigation Menu"
+          title="Toggle Menu"
         >
-          {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          <Menu size={22} />
+          <span className="mobile-menu-label">Menu</span>
         </button>
-        <span className="mobile-app-title">TaskPulse PRO</span>
-        <button className="btn btn-primary btn-sm mobile-add-btn" onClick={() => setActiveModalTask('new')}>
-          <Plus size={16} /> Task
-        </button>
+
+        <div className="mobile-brand-title">TaskPulse PRO</div>
       </div>
 
-      {/* Motivational Hero Banner */}
+      {/* Daily Motivation Banner Card (Matches Sketch: Daily Mot) */}
       <div className="hero-banner glass-panel">
         <div className="hero-content">
           <div className="hero-tag">
@@ -86,7 +86,6 @@ export const Header = ({ activeTab }) => {
           <p className="hero-quote">"{randomQuote}"</p>
         </div>
 
-        {/* Hero Progress Widget */}
         <div className="hero-progress-card">
           <div className="hero-progress-text">
             <div className="progress-info-head">
@@ -102,20 +101,21 @@ export const Header = ({ activeTab }) => {
         </div>
       </div>
 
-      {/* Main Header Bar */}
+      {/* Main View Title & Search/Streak Controls Row */}
       <header className="app-header">
         <div className="header-title-area">
           <h1>{getViewTitle()}</h1>
         </div>
 
         <div className="header-controls">
+          {/* Search section */}
           <div className="search-bar-container">
             <Search size={16} className="search-icon" />
             <input
               ref={searchInputRef}
               type="text"
               className="search-input"
-              placeholder="Search tasks or tags... ('/' to focus)"
+              placeholder="Search section..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -127,7 +127,7 @@ export const Header = ({ activeTab }) => {
           </div>
 
           {activeTab === 'tasks' && (
-            <div className="sort-container">
+            <div className="sort-container desktop-only-sort">
               <ArrowUpDown size={15} className="sort-icon" />
               <select
                 className="sort-select"
@@ -142,9 +142,10 @@ export const Header = ({ activeTab }) => {
             </div>
           )}
 
+          {/* 0 Day Streak Badge (Matches Sketch: [ 0 Day Str ]) */}
           <div className="streak-badge" title="Real Daily Productivity Streak">
-            <Flame size={18} className="flame-icon" />
-            <span className="streak-num">{streakData.count} Day Streak</span>
+            <Flame size={16} className="flame-icon" />
+            <span className="streak-num">{streakData.count} Day Str</span>
           </div>
 
           <button

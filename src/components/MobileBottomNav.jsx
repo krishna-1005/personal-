@@ -24,16 +24,16 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
 
   return (
     <>
-      {/* Floating Action Button (+ Task) on Mobile */}
+      {/* Floating Action Button (+) on Mobile (Matches Sketch: round (+) at bottom right) */}
       <button
         className="mobile-fab-btn"
         onClick={() => setActiveModalTask('new')}
         title="Create New Task"
       >
-        <Plus size={24} color="#ffffff" />
+        <Plus size={26} color="#ffffff" strokeWidth={3} />
       </button>
 
-      {/* Relaxed Mobile Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar (Matches Sketch: Tasks | Today | Time | Habit | ≡) */}
       <nav className="mobile-bottom-nav">
         <button
           className={`mobile-nav-pill ${activeTab === 'tasks' && activeView === 'inbox' ? 'active' : ''}`}
@@ -57,7 +57,7 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
           onClick={() => handleNav('tasks', 'day-schedule')}
         >
           <CalendarDays size={20} />
-          <span>Timeline</span>
+          <span>Time</span>
         </button>
 
         <button
@@ -65,7 +65,7 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
           onClick={() => handleNav('habits')}
         >
           <Award size={20} />
-          <span>Habits</span>
+          <span>Habit</span>
         </button>
 
         <button
@@ -73,7 +73,7 @@ export const MobileBottomNav = ({ activeTab, setActiveTab }) => {
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         >
           <Menu size={20} />
-          <span>Menu</span>
+          <span>≡</span>
         </button>
       </nav>
     </>

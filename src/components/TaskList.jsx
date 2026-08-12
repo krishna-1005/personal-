@@ -16,11 +16,11 @@ import {
   Code,
   Activity,
   DollarSign,
-  LayoutGrid,
-  ListFilter,
   CalendarDays,
+  ListFilter,
   AlertCircle,
-  Sun
+  Sun,
+  SlidersHorizontal
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -43,7 +43,7 @@ export const TaskList = () => {
   } = useTask();
 
   const [priorityFilter, setPriorityFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('day-split'); // 'list' or 'day-split'
+  const [viewMode, setViewMode] = useState('day-split');
 
   const todayStr = new Date().toISOString().split('T')[0];
   const tomorrowDate = new Date(Date.now() + 86400000);
@@ -143,10 +143,14 @@ export const TaskList = () => {
 
   return (
     <div className="task-list-container">
-      {/* Priority Filter & View Mode Controls Bar */}
-      <div className="filter-bar">
+      {/* Priorities Filter Card (Matches Sketch: [ Priorities ]) */}
+      <div className="priorities-card glass-panel">
+        <div className="priorities-card-header">
+          <SlidersHorizontal size={15} color="#6366f1" />
+          <span>Priorities</span>
+        </div>
+
         <div className="filter-pills">
-          <span className="filter-label"><Filter size={14} /> Priority:</span>
           {['all', 'urgent', 'high', 'medium', 'low'].map(p => (
             <button
               key={p}
@@ -158,20 +162,20 @@ export const TaskList = () => {
           ))}
         </div>
 
-        <div className="view-mode-toggle-group">
+        <div className="view-mode-toggle-group desktop-mode-toggle">
           <button
             className={`btn-mode-pill ${viewMode === 'day-split' ? 'active' : ''}`}
             onClick={() => setViewMode('day-split')}
             title="Group tasks by day timeline"
           >
-            <CalendarDays size={14} /> Day-Wise Split
+            <CalendarDays size={14} /> Day Split
           </button>
           <button
             className={`btn-mode-pill ${viewMode === 'list' ? 'active' : ''}`}
             onClick={() => setViewMode('list')}
             title="Display flat task list"
           >
-            <ListFilter size={14} /> Standard List
+            <ListFilter size={14} /> List
           </button>
         </div>
       </div>
@@ -186,7 +190,7 @@ export const TaskList = () => {
             ))}
           </div>
         ) : (
-          /* Day-Wise Split Timeline View */
+          /* Day-Wise Split View (Matches Sketch: Today - Day wise, 2x2 grid, Next Day task) */
           <div className="day-split-container">
             {/* Overdue Section */}
             {dayGroups.overdue.length > 0 && (
@@ -198,7 +202,7 @@ export const TaskList = () => {
                   </div>
                   <span className="day-count-badge badge-overdue">{dayGroups.overdue.length} Tasks</span>
                 </div>
-                <div className="day-tasks-grid">
+                <div className="day-tasks-grid mobile-2col-grid">
                   {dayGroups.overdue.map(t => (
                     <TaskItem key={t.id} task={t} />
                   ))}
@@ -206,42 +210,44 @@ export const TaskList = () => {
               </div>
             )}
 
-            {/* Today Section */}
+            {/* Today - Day wise Section (Matches Sketch Header: Today-Day wise | No of tasks) */}
             <div className="day-group-section today-group">
               <div className="day-group-header">
                 <div className="day-title-left">
                   <Sun size={18} color="#f59e0b" />
-                  <h3>Today — {formatDateLabel(todayStr)}</h3>
+                  <h3>Today — Day wise</h3>
                 </div>
                 <span className="day-count-badge badge-today">{dayGroups.today.length} Tasks</span>
               </div>
-              <div className="day-tasks-grid">
+              
+              {/* 2x2 Task Cards Grid for Mobile (Matches Sketch: Task 1, 2, 3, 4) */}
+              <div className="day-tasks-grid mobile-2col-grid">
                 {dayGroups.today.length > 0 ? (
                   dayGroups.today.map(t => (
                     <TaskItem key={t.id} task={t} />
                   ))
                 ) : (
-                  <p className="day-empty-hint">No tasks scheduled for Today yet. Enjoy your day or add a task below!</p>
+                  <p className="day-empty-hint">No tasks scheduled for Today yet. Click '+' to add a task!</p>
                 )}
               </div>
             </div>
 
-            {/* Tomorrow Section */}
+            {/* Next Day task Section (Matches Sketch: Next Day task) */}
             <div className="day-group-section tomorrow-group">
               <div className="day-group-header">
                 <div className="day-title-left">
                   <Calendar size={18} color="#06b6d4" />
-                  <h3>Tomorrow — {formatDateLabel(tomorrowStr)}</h3>
+                  <h3>Next Day task</h3>
                 </div>
                 <span className="day-count-badge badge-tomorrow">{dayGroups.tomorrow.length} Tasks</span>
               </div>
-              <div className="day-tasks-grid">
+              <div className="day-tasks-grid mobile-2col-grid">
                 {dayGroups.tomorrow.length > 0 ? (
                   dayGroups.tomorrow.map(t => (
                     <TaskItem key={t.id} task={t} />
                   ))
                 ) : (
-                  <p className="day-empty-hint">No tasks scheduled for Tomorrow.</p>
+                  <p className="day-empty-hint">No tasks scheduled for Next Day.</p>
                 )}
               </div>
             </div>
@@ -256,7 +262,7 @@ export const TaskList = () => {
                   </div>
                   <span className="day-count-badge">{dayGroups.upcoming[dateKey].length} Tasks</span>
                 </div>
-                <div className="day-tasks-grid">
+                <div className="day-tasks-grid mobile-2col-grid">
                   {dayGroups.upcoming[dateKey].map(t => (
                     <TaskItem key={t.id} task={t} />
                   ))}
@@ -275,7 +281,7 @@ export const TaskList = () => {
           <p>
             {searchQuery
               ? `No matches found for "${searchQuery}". Try adjusting search terms or filters.`
-              : `You are all caught up! Click below to add a new item to your ${currentCategory ? currentCategory.name : 'agenda'}.`}
+              : `You are all caught up! Click '+' below to create a task.`}
           </p>
           <button
             className="btn btn-primary empty-add-btn"
