@@ -92,13 +92,15 @@ export const TaskProvider = ({ children }) => {
     return localStorage.getItem('taskpulse_user_email') || 'krishkulkarni1005@gmail.com';
   });
 
-  const [cloudSyncId, setCloudSyncId] = useState(() => {
-    return localStorage.getItem('taskpulse_cloud_sync_id') || '';
-  });
-
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [lastSyncedTime, setLastSyncedTime] = useState(null);
+  const lastSyncTimestampRef = useRef(0);
+
+  const getEmailTopicKey = (email) => {
+    const clean = (email || 'krishkulkarni1005@gmail.com').trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    return `taskpulse_v4_sync_${clean}`;
+  };
 
   const getUserStorageKey = (email) => {
     const clean = (email || 'default').toLowerCase().replace(/[^a-z0-9]/g, '_');
@@ -216,15 +218,6 @@ export const TaskProvider = ({ children }) => {
   const [showStreakModal, setShowStreakModal] = useState(false);
   const [celebratedStreakNum, setCelebratedStreakNum] = useState(0);
 
-  // Check URL params for syncId on initial load (e.g. personal-lilac-eta.vercel.app?syncId=xxx)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const syncParam = urlParams.get('syncId');
-    if (syncParam) {
-      connectCloudSyncId(syncParam.trim());
-    }
-  }, []);
-
   // Save local storage backup
   const saveUserDataToLocal = (emailToSave) => {
     const email = emailToSave || currentUserEmail;
@@ -249,14 +242,19 @@ export const TaskProvider = ({ children }) => {
     localStorage.setItem('taskpulse_scratchpad', scratchpad);
   };
 
-  // Real-time Cloud REST Push (Desktop/Mobile to Cloud API)
-  const pushToOnlineCloud = async (targetSyncId = cloudSyncId) => {
-    if (!targetSyncId) return;
+  // Automatic Real-Time Cloud Push (Desktop/Mobile to Cloud topic)
+  const pushToOnlineCloud = async (targetEmail = currentUserEmail) => {
+    if (!targetEmail) return;
+    const topic = getEmailTopicKey(targetEmail);
     try {
       setIsSyncing(true);
+      const syncTs = Date.now();
+      lastSyncTimestampRef.current = syncTs;
+
       const payload = {
-        email: currentUserEmail,
-        updatedAt: Date.now(),
+        email: targetEmail,
+        syncTimestamp: syncTs,
+        updatedAt: new Date().toISOString(),
         tasks,
         categories,
         habits,
@@ -266,10 +264,10 @@ export const TaskProvider = ({ children }) => {
         punishmentLog
       };
 
-      await fetch(`https://api.restful-api.dev/objects/${targetSyncId}`, {
-        method: 'PUT',
+      await fetch(`https://ntfy.sh/${topic}`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: `taskpulse_${currentUserEmail}`, data: payload })
+        body: JSON.stringify(payload)
       });
       setLastSyncedTime(new Date().toLocaleTimeString());
     } catch (e) {
@@ -279,25 +277,35 @@ export const TaskProvider = ({ children }) => {
     }
   };
 
-  // Real-time Cloud REST Pull (Download latest tasks across devices)
-  const pullFromOnlineCloud = async (targetSyncId = cloudSyncId) => {
-    if (!targetSyncId) return false;
+  // Automatic Real-Time Cloud Pull (Download latest tasks by email across devices)
+  const pullFromOnlineCloud = async (targetEmail = currentUserEmail) => {
+    if (!targetEmail) return false;
+    const topic = getEmailTopicKey(targetEmail);
     try {
       setIsSyncing(true);
-      const res = await fetch(`https://api.restful-api.dev/objects/${targetSyncId}`);
+      const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1`);
       if (!res.ok) return false;
-      const record = await res.json();
-      if (record && record.data) {
-        const cloudData = record.data;
-        if (cloudData.tasks) setTasks(cloudData.tasks);
-        if (cloudData.categories) setCategories(cloudData.categories);
-        if (cloudData.habits) setHabits(cloudData.habits);
-        if (cloudData.streakData) setStreakData(cloudData.streakData);
-        if (cloudData.scratchpad) setScratchpad(cloudData.scratchpad);
-        if (cloudData.focusStats) setFocusStats(cloudData.focusStats);
-        if (cloudData.punishmentLog) setPunishmentLog(cloudData.punishmentLog);
-        setLastSyncedTime(new Date().toLocaleTimeString());
-        return true;
+      const rawText = await res.text();
+      const lines = rawText.trim().split('\n').filter(Boolean);
+      if (lines.length > 0) {
+        const lastMsg = JSON.parse(lines[lines.length - 1]);
+        if (lastMsg && lastMsg.message) {
+          const cloudData = JSON.parse(lastMsg.message);
+          
+          // Only update if cloud data has newer timestamp
+          if (cloudData.syncTimestamp && cloudData.syncTimestamp > lastSyncTimestampRef.current) {
+            lastSyncTimestampRef.current = cloudData.syncTimestamp;
+            if (cloudData.tasks) setTasks(cloudData.tasks);
+            if (cloudData.categories) setCategories(cloudData.categories);
+            if (cloudData.habits) setHabits(cloudData.habits);
+            if (cloudData.streakData) setStreakData(cloudData.streakData);
+            if (cloudData.scratchpad) setScratchpad(cloudData.scratchpad);
+            if (cloudData.focusStats) setFocusStats(cloudData.focusStats);
+            if (cloudData.punishmentLog) setPunishmentLog(cloudData.punishmentLog);
+            setLastSyncedTime(new Date().toLocaleTimeString());
+            return true;
+          }
+        }
       }
     } catch (e) {
       console.error('Cloud Pull Error:', e);
@@ -307,82 +315,40 @@ export const TaskProvider = ({ children }) => {
     return false;
   };
 
-  // Connect or initialize Cloud Sync ID for cross-device sync
-  const connectCloudSyncId = async (existingSyncId) => {
-    if (existingSyncId) {
-      localStorage.setItem('taskpulse_cloud_sync_id', existingSyncId);
-      setCloudSyncId(existingSyncId);
-      const success = await pullFromOnlineCloud(existingSyncId);
-      if (success) return true;
+  // Initial pull when user email is loaded or changed
+  useEffect(() => {
+    if (currentUserEmail) {
+      pullFromOnlineCloud(currentUserEmail);
     }
-
-    // Create a new record if none provided or invalid
-    try {
-      setIsSyncing(true);
-      const initialPayload = {
-        email: currentUserEmail,
-        updatedAt: Date.now(),
-        tasks,
-        categories,
-        habits,
-        streakData,
-        scratchpad,
-        focusStats,
-        punishmentLog
-      };
-
-      const res = await fetch('https://api.restful-api.dev/objects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: `taskpulse_${currentUserEmail}`, data: initialPayload })
-      });
-
-      const newObj = await res.json();
-      if (newObj && newObj.id) {
-        localStorage.setItem('taskpulse_cloud_sync_id', newObj.id);
-        setCloudSyncId(newObj.id);
-        setLastSyncedTime(new Date().toLocaleTimeString());
-        return newObj.id;
-      }
-    } catch (e) {
-      console.error('Cloud Connect Error:', e);
-    } finally {
-      setIsSyncing(false);
-    }
-    return false;
-  };
+  }, [currentUserEmail]);
 
   // Auto Push changes locally and to cloud
   useEffect(() => {
     saveUserDataToLocal();
-    if (cloudSyncId) {
+    if (currentUserEmail) {
       const timer = setTimeout(() => {
-        pushToOnlineCloud(cloudSyncId);
+        pushToOnlineCloud(currentUserEmail);
       }, 1000);
       return () => clearTimeout(timer);
     }
   }, [tasks, categories, habits, streakData, scratchpad, focusStats, currentUserEmail]);
 
-  // Periodic Cloud Sync Poll every 6 seconds to keep Mobile and Desktop 100% in sync
+  // Periodic Cloud Sync Poll every 5 seconds to keep Mobile and Desktop 100% in sync
   useEffect(() => {
-    if (!cloudSyncId) {
-      connectCloudSyncId();
-      return;
-    }
-
+    if (!currentUserEmail) return;
     const pollInterval = setInterval(() => {
-      pullFromOnlineCloud(cloudSyncId);
-    }, 6000);
+      pullFromOnlineCloud(currentUserEmail);
+    }, 5000);
 
     return () => clearInterval(pollInterval);
-  }, [cloudSyncId]);
+  }, [currentUserEmail]);
 
   useEffect(() => {
     localStorage.setItem('taskpulse_theme', theme);
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // Login with Email ID (Pulls user data across devices/browsers)
+  // Login with Email ID (Pulls user data across devices/browsers AUTOMATICALLY)
   const loginWithEmail = async (email) => {
     const normalized = email.trim().toLowerCase();
     localStorage.setItem('taskpulse_user_email', normalized);
@@ -391,25 +357,19 @@ export const TaskProvider = ({ children }) => {
     // Save local
     saveUserDataToLocal(normalized);
 
-    // Connect cloud record for this email
-    await connectCloudSyncId();
+    // Pull cloud tasks for this email
+    await pullFromOnlineCloud(normalized);
     return true;
   };
 
   const logoutUser = () => {
     setCurrentUserEmail('');
-    setCloudSyncId('');
     localStorage.removeItem('taskpulse_user_email');
-    localStorage.removeItem('taskpulse_cloud_sync_id');
   };
 
   const syncDataCloud = async () => {
-    if (!cloudSyncId) {
-      await connectCloudSyncId();
-    } else {
-      await pushToOnlineCloud();
-      await pullFromOnlineCloud();
-    }
+    await pushToOnlineCloud();
+    await pullFromOnlineCloud();
   };
 
   const triggerPunishmentForMissedTask = (missedTask) => {
@@ -713,7 +673,7 @@ export const TaskProvider = ({ children }) => {
   };
 
   const exportData = () => {
-    const data = { currentUserEmail, cloudSyncId, tasks, categories, habits, streakData, scratchpad, focusStats, theme, punishmentLog };
+    const data = { currentUserEmail, tasks, categories, habits, streakData, scratchpad, focusStats, theme, punishmentLog };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -727,7 +687,6 @@ export const TaskProvider = ({ children }) => {
     try {
       const data = JSON.parse(importedJson);
       if (data.currentUserEmail) loginWithEmail(data.currentUserEmail);
-      if (data.cloudSyncId) connectCloudSyncId(data.cloudSyncId);
       if (data.tasks) setTasks(data.tasks);
       if (data.categories) setCategories(data.categories);
       if (data.habits) setHabits(data.habits);
@@ -745,9 +704,7 @@ export const TaskProvider = ({ children }) => {
     <TaskContext.Provider
       value={{
         currentUserEmail,
-        cloudSyncId,
         lastSyncedTime,
-        connectCloudSyncId,
         pushToOnlineCloud,
         pullFromOnlineCloud,
         loginWithEmail,
